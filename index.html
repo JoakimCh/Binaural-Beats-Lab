@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Binaural Beats Lab</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --success: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+      --radius: 12px;
+      --gap: 1rem;
+      --touch: 48px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: var(--gap);
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .headphones {
+      background: #1c2128;
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
+      text-align: center;
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      margin-bottom: var(--gap);
+    }
+
+    /* Play controls */
+    .play-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    #playBtn {
+      flex: 0 0 auto;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 4px 14px rgba(31, 111, 235, 0.4);
+    }
+
+    #playBtn:active {
+      transform: scale(0.96);
+    }
+
+    #playBtn.playing {
+      background: var(--danger);
+      box-shadow: 0 4px 14px rgba(248, 81, 73, 0.35);
+    }
+
+    .volume-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .volume-wrap label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+
+    /* Frequency controls */
+    .freq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    @media (max-width: 420px) {
+      .freq-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .freq-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+
+    .freq-box label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .freq-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 0.5rem;
+    }
+
+    .freq-box input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      font-size: 1rem;
+      margin-top: 0.4rem;
+      -moz-appearance: textfield;
+    }
+
+    .freq-box input[type="number"]::-webkit-outer-spin-button,
+    .freq-box input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .beat-display {
+      text-align: center;
+      padding: 0.85rem;
+      background: var(--surface2);
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .beat-display .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .beat-display .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .beat-display .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Visualizer */
+    #viz {
+      width: 100%;
+      height: 64px;
+      background: var(--bg);
+      border-radius: 8px;
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    /* Presets */
+    .preset-select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      min-height: var(--touch);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button.btn {
+      flex: 1;
+      min-width: 120px;
+      min-height: var(--touch);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 0.6rem 0.8rem;
+      transition: background 0.15s;
+    }
+
+    button.btn:active {
+      background: var(--border);
+    }
+
+    button.btn.primary {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.btn.danger {
+      color: var(--danger);
+      border-color: #6e2c2c;
+    }
+
+    /* User presets list */
+    #userPresets {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    #userPresets li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #userPresets li:last-child {
+      border-bottom: none;
+    }
+
+    #userPresets .name {
+      flex: 1;
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #userPresets .meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    #userPresets button {
+      min-height: 36px;
+      min-width: 36px;
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .empty-msg {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 0.75rem 0;
+    }
+
+    /* Status / wake lock */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: var(--surface2);
+    }
+
+    .status-pill.on {
+      color: var(--success);
+    }
+
+    /* Info / disclaimer */
+    .info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .info a {
+      color: var(--accent);
+    }
+
+    details {
+      margin-top: 0.5rem;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.85rem;
+    }
+
+    /* Save form */
+    #saveForm {
+      display: none;
+      margin-top: 0.75rem;
+      gap: 0.5rem;
+      flex-direction: column;
+    }
+
+    #saveForm.visible {
+      display: flex;
+    }
+
+    #saveForm input[type="text"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      min-height: var(--touch);
+    }
+
+    /* Small screens refinements */
+    @media (max-width: 380px) {
+      h1 { font-size: 1.3rem; }
+      .freq-value { font-size: 1.3rem; }
+      .beat-display .value { font-size: 1.5rem; }
+      #playBtn { width: 64px; height: 64px; font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Binaural Beats Lab</h1>
+  <p class="subtitle">Pure sine tones · inspired by Monroe Institute research</p>
+
+  <div class="headphones">
+    🎧 Headphones required for true binaural effect
+  </div>
+
+  <div class="card">
+    <div class="play-row">
+      <button id="playBtn" aria-label="Play">▶</button>
+      <div class="volume-wrap">
+        <label for="volume">Volume</label>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.25">
+      </div>
+    </div>
+
+    <div class="freq-grid">
+      <div class="freq-box">
+        <label for="leftFreq">Left ear (Hz)</label>
+        <div class="freq-value" id="leftDisplay">100.0</div>
+        <input type="range" id="leftSlider" min="40" max="600" step="0.1" value="100">
+        <input type="number" id="leftFreq" min="20" max="1500" step="0.1" value="100" inputmode="decimal">
+      </div>
+      <div class="freq-box">
+        <label for="rightFreq">Right ear (Hz)</label>
+        <div class="freq-value" id="rightDisplay">104.0</div>
+        <input type="range" id="rightSlider" min="40" max="600" step="0.1" value="104">
+        <input type="number" id="rightFreq" min="20" max="1500" step="0.1" value="104" inputmode="decimal">
+      </div>
+    </div>
+
+    <div class="beat-display">
+      <div class="label">Binaural beat</div>
+      <div class="value" id="beatDisplay">4.0 Hz</div>
+      <div class="hint" id="beatHint">Theta range · meditative / Focus-style</div>
+    </div>
+
+    <canvas id="viz" width="600" height="64" aria-hidden="true"></canvas>
+
+    <div class="status-bar">
+      <span class="status-pill" id="audioStatus">Audio stopped</span>
+      <span class="status-pill" id="wakeStatus">Wake lock: off</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Presets</h2>
+    <select id="presetSelect" class="preset-select" aria-label="Built-in presets">
+      <option value="">— Choose a preset —</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn primary" id="saveBtn">Save current as preset</button>
+      <button class="btn" id="exportBtn">Export</button>
+      <button class="btn" id="importBtn">Import</button>
+    </div>
+    <div id="saveForm">
+      <input type="text" id="presetName" placeholder="Preset name" maxlength="40" autocomplete="off">
+      <div class="btn-row">
+        <button class="btn primary" id="confirmSave">Save</button>
+        <button class="btn" id="cancelSave">Cancel</button>
+      </div>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="card">
+    <h2>My Presets</h2>
+    <ul id="userPresets"></ul>
+    <p class="empty-msg" id="emptyPresets">No saved presets yet.</p>
+  </div>
+
+  <div class="card info">
+    <p><strong>About binaural beats &amp; the Monroe Institute</strong></p>
+    <p>When two pure tones of slightly different frequencies are played one to each ear, the brain perceives a third “beat” equal to their difference. This can encourage a frequency-following response and inter-hemispheric synchronization — the principle behind Robert Monroe’s Hemi-Sync® research and the Focus levels (Focus 10, 12, 15, 21…). This tool uses only pure sine waves via the Web Audio API.</p>
+    <details>
+      <summary>Disclaimer &amp; notes</summary>
+      <p>This is an educational experiment, not a medical device or treatment. Effects vary widely between individuals. Use at comfortable volume. The Screen Wake Lock API keeps the screen on while audio plays (supported on modern mobile browsers). All data stays in your browser (localStorage). No third-party libraries or tracking.</p>
+    </details>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  // ---------- Built-in presets (public knowledge / common ranges) ----------
+  const BUILTIN = [
+    { name: 'Theta Meditation (classic 4 Hz)', left: 100, right: 104, volume: 0.25 },
+    { name: 'Deep Delta Sleep (~2 Hz)', left: 100, right: 102, volume: 0.2 },
+    { name: 'Alpha Relaxed Focus (10 Hz)', left: 200, right: 210, volume: 0.25 },
+    { name: 'Beta Concentration (16 Hz)', left: 200, right: 216, volume: 0.22 },
+    { name: 'Low Theta (~6 Hz)', left: 120, right: 126, volume: 0.25 },
+    { name: 'Focus 10-ish (body asleep / mind awake)', left: 100, right: 104.5, volume: 0.22 },
+    { name: 'Schumann-ish (7.83 Hz)', left: 150, right: 157.83, volume: 0.25 },
+    { name: 'Deep Theta (3.5 Hz)', left: 110, right: 113.5, volume: 0.22 }
+  ];
+
+  // ---------- DOM ----------
+  const playBtn = document.getElementById('playBtn');
+  const volumeEl = document.getElementById('volume');
+  const leftSlider = document.getElementById('leftSlider');
+  const rightSlider = document.getElementById('rightSlider');
+  const leftFreq = document.getElementById('leftFreq');
+  const rightFreq = document.getElementById('rightFreq');
+  const leftDisplay = document.getElementById('leftDisplay');
+  const rightDisplay = document.getElementById('rightDisplay');
+  const beatDisplay = document.getElementById('beatDisplay');
+  const beatHint = document.getElementById('beatHint');
+  const presetSelect = document.getElementById('presetSelect');
+  const saveBtn = document.getElementById('saveBtn');
+  const saveForm = document.getElementById('saveForm');
+  const presetName = document.getElementById('presetName');
+  const confirmSave = document.getElementById('confirmSave');
+  const cancelSave = document.getElementById('cancelSave');
+  const userPresetsEl = document.getElementById('userPresets');
+  const emptyPresets = document.getElementById('emptyPresets');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  const audioStatus = document.getElementById('audioStatus');
+  const wakeStatus = document.getElementById('wakeStatus');
+  const canvas = document.getElementById('viz');
+  const ctx2d = canvas.getContext('2d');
+
+  // ---------- Audio engine ----------
+  let audioCtx = null;
+  let leftOsc = null;
+  let rightOsc = null;
+  let leftGain = null;
+  let rightGain = null;
+  let masterGain = null;
+  let merger = null;
+  let isPlaying = false;
+  let wakeLock = null;
+  let animId = null;
+  let startTime = 0;
+
+  function ensureAudio() {
+    if (audioCtx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+
+    leftOsc = audioCtx.createOscillator();
+    rightOsc = audioCtx.createOscillator();
+    leftOsc.type = 'sine';
+    rightOsc.type = 'sine';
+
+    leftGain = audioCtx.createGain();
+    rightGain = audioCtx.createGain();
+    masterGain = audioCtx.createGain();
+    merger = audioCtx.createChannelMerger(2);
+
+    leftOsc.connect(leftGain);
+    rightOsc.connect(rightGain);
+    leftGain.connect(merger, 0, 0);
+    rightGain.connect(merger, 0, 1);
+    merger.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+
+    leftOsc.frequency.value = parseFloat(leftFreq.value);
+    rightOsc.frequency.value = parseFloat(rightFreq.value);
+    masterGain.gain.value = parseFloat(volumeEl.value);
+
+    leftOsc.start();
+    rightOsc.start();
+
+    // Start muted until play
+    leftGain.gain.value = 0;
+    rightGain.gain.value = 0;
+  }
+
+  function setFrequencies(l, r) {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    leftOsc.frequency.setTargetAtTime(l, now, 0.01);
+    rightOsc.frequency.setTargetAtTime(r, now, 0.01);
+  }
+
+  function setVolume(v) {
+    if (!masterGain) return;
+    masterGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
+  }
+
+  function startAudio() {
+    ensureAudio();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+    leftGain.gain.setTargetAtTime(1, now, 0.015);
+    rightGain.gain.setTargetAtTime(1, now, 0.015);
+    isPlaying = true;
+    playBtn.textContent = '⏸';
+    playBtn.classList.add('playing');
+    playBtn.setAttribute('aria-label', 'Pause');
+    audioStatus.textContent = 'Playing';
+    audioStatus.classList.add('on');
+    startTime = performance.now();
+    requestWakeLock();
+    startViz();
+  }
+
+  function stopAudio() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    leftGain.gain.setTargetAtTime(0, now, 0.02);
+    rightGain.gain.setTargetAtTime(0, now, 0.02);
+    isPlaying = false;
+    playBtn.textContent = '▶';
+    playBtn.classList.remove('playing');
+    playBtn.setAttribute('aria-label', 'Play');
+    audioStatus.textContent = 'Audio stopped';
+    audioStatus.classList.remove('on');
+    releaseWakeLock();
+    stopViz();
+  }
+
+  // ---------- Wake Lock ----------
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) {
+      wakeStatus.textContent = 'Wake lock: unsupported';
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeStatus.textContent = 'Wake lock: on';
+      wakeStatus.classList.add('on');
+      wakeLock.addEventListener('release', () => {
+        wakeStatus.textContent = 'Wake lock: off';
+        wakeStatus.classList.remove('on');
+      });
+    } catch (err) {
+      wakeStatus.textContent = 'Wake lock: denied';
+      console.warn('Wake Lock error:', err);
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock) {
+      try { await wakeLock.release(); } catch (_) {}
+      wakeLock = null;
+    }
+    wakeStatus.textContent = 'Wake lock: off';
+    wakeStatus.classList.remove('on');
+  }
+
+  // Re-acquire on visibility change if still playing
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && isPlaying && !wakeLock) {
+      await requestWakeLock();
+    }
+  });
+
+  // ---------- UI sync ----------
+  function updateBeat() {
+    const l = parseFloat(leftFreq.value) || 0;
+    const r = parseFloat(rightFreq.value) || 0;
+    const beat = Math.abs(l - r);
+    beatDisplay.textContent = beat.toFixed(2) + ' Hz';
+
+    let range = '—';
+    if (beat < 0.5) range = 'Very low / borderline';
+    else if (beat < 4) range = 'Delta · deep sleep / healing';
+    else if (beat < 8) range = 'Theta · meditative / Focus-style';
+    else if (beat < 13) range = 'Alpha · relaxed awareness';
+    else if (beat < 30) range = 'Beta · alert / concentration';
+    else range = 'High beta / gamma territory';
+    beatHint.textContent = range;
+
+    leftDisplay.textContent = l.toFixed(1);
+    rightDisplay.textContent = r.toFixed(1);
+  }
+
+  function syncFromInputs() {
+    const l = clamp(parseFloat(leftFreq.value), 20, 1500);
+    const r = clamp(parseFloat(rightFreq.value), 20, 1500);
+    leftFreq.value = l;
+    rightFreq.value = r;
+    leftSlider.value = Math.min(600, Math.max(40, l));
+    rightSlider.value = Math.min(600, Math.max(40, r));
+    updateBeat();
+    if (audioCtx) setFrequencies(l, r);
+  }
+
+  function clamp(v, min, max) {
+    return Math.min(max, Math.max(min, isNaN(v) ? min : v));
+  }
+
+  // ---------- Visualizer (simple phase / beat pulse) ----------
+  function startViz() {
+    if (animId) return;
+    function draw() {
+      const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+      const h = canvas.height = 64 * (window.devicePixelRatio || 1);
+      ctx2d.clearRect(0, 0, w, h);
+
+      if (!isPlaying) {
+        animId = null;
+        return;
+      }
+
+      const t = (performance.now() - startTime) / 1000;
+      const l = parseFloat(leftFreq.value) || 100;
+      const r = parseFloat(rightFreq.value) || 104;
+      const beat = Math.abs(l - r);
+
+      ctx2d.lineWidth = 2 * (window.devicePixelRatio || 1);
+
+      // Left wave
+      ctx2d.beginPath();
+      ctx2d.strokeStyle = 'rgba(88, 166, 255, 0.7)';
+      for (let x = 0; x < w; x++) {
+        const phase = (x / w) * 8 * Math.PI + t * l * 0.15;
+        const y = h / 2 + Math.sin(phase) * (h * 0.28);
+        if (x === 0) ctx2d.moveTo(x, y);
+        else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      // Right wave
+      ctx2d.beginPath();
+      ctx2d.strokeStyle = 'rgba(63, 185, 80, 0.7)';
+      for (let x = 0; x < w; x++) {
+        const phase = (x / w) * 8 * Math.PI + t * r * 0.15;
+        const y = h / 2 + Math.sin(phase) * (h * 0.28);
+        if (x === 0) ctx2d.moveTo(x, y);
+        else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      // Beat envelope indicator
+      if (beat > 0.1) {
+        const env = 0.5 + 0.5 * Math.sin(t * beat * Math.PI * 2);
+        ctx2d.fillStyle = `rgba(88, 166, 255, ${0.15 + env * 0.25})`;
+        ctx2d.fillRect(0, 0, w, h);
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  function stopViz() {
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+    const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+    const h = canvas.height = 64 * (window.devicePixelRatio || 1);
+    ctx2d.clearRect(0, 0, w, h);
+  }
+
+  // ---------- Presets storage ----------
+  const STORAGE_KEY = 'binaural-beats-lab-presets-v1';
+
+  function loadUserPresets() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveUserPresets(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  function renderUserPresets() {
+    const list = loadUserPresets();
+    userPresetsEl.innerHTML = '';
+    emptyPresets.style.display = list.length ? 'none' : 'block';
+
+    list.forEach((p, i) => {
+      const li = document.createElement('li');
+      const beat = Math.abs(p.left - p.right).toFixed(1);
+      li.innerHTML = `
+        <span class="name">${escapeHtml(p.name)}</span>
+        <span class="meta">${p.left} / ${p.right} Hz · ${beat} Hz</span>
+        <button data-load="${i}" title="Load">Load</button>
+        <button data-del="${i}" title="Delete" class="danger">✕</button>
+      `;
+      userPresetsEl.appendChild(li);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function applyPreset(p) {
+    leftFreq.value = p.left;
+    rightFreq.value = p.right;
+    volumeEl.value = p.volume != null ? p.volume : 0.25;
+    syncFromInputs();
+    setVolume(parseFloat(volumeEl.value));
+  }
+
+  // Populate built-in select
+  BUILTIN.forEach((p, i) => {
+    const opt = document.createElement('option');
+    opt.value = 'b' + i;
+    opt.textContent = p.name;
+    presetSelect.appendChild(opt);
+  });
+
+  // ---------- Event listeners ----------
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) stopAudio();
+    else startAudio();
+  });
+
+  volumeEl.addEventListener('input', () => {
+    setVolume(parseFloat(volumeEl.value));
+  });
+
+  leftSlider.addEventListener('input', () => {
+    leftFreq.value = leftSlider.value;
+    syncFromInputs();
+  });
+  rightSlider.addEventListener('input', () => {
+    rightFreq.value = rightSlider.value;
+    syncFromInputs();
+  });
+
+  leftFreq.addEventListener('change', syncFromInputs);
+  rightFreq.addEventListener('change', syncFromInputs);
+  leftFreq.addEventListener('input', () => {
+    leftDisplay.textContent = parseFloat(leftFreq.value).toFixed(1) || '0.0';
+    updateBeat();
+  });
+  rightFreq.addEventListener('input', () => {
+    rightDisplay.textContent = parseFloat(rightFreq.value).toFixed(1) || '0.0';
+    updateBeat();
+  });
+
+  presetSelect.addEventListener('change', () => {
+    const v = presetSelect.value;
+    if (!v) return;
+    if (v.startsWith('b')) {
+      applyPreset(BUILTIN[parseInt(v.slice(1), 10)]);
+    }
+    presetSelect.value = '';
+  });
+
+  saveBtn.addEventListener('click', () => {
+    saveForm.classList.add('visible');
+    presetName.value = '';
+    presetName.focus();
+  });
+
+  cancelSave.addEventListener('click', () => {
+    saveForm.classList.remove('visible');
+  });
+
+  confirmSave.addEventListener('click', () => {
+    const name = presetName.value.trim() || 'My preset';
+    const list = loadUserPresets();
+    list.push({
+      name,
+      left: parseFloat(leftFreq.value),
+      right: parseFloat(rightFreq.value),
+      volume: parseFloat(volumeEl.value)
+    });
+    saveUserPresets(list);
+    renderUserPresets();
+    saveForm.classList.remove('visible');
+  });
+
+  userPresetsEl.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t.dataset.load != null) {
+      const list = loadUserPresets();
+      applyPreset(list[parseInt(t.dataset.load, 10)]);
+    }
+    if (t.dataset.del != null) {
+      const list = loadUserPresets();
+      list.splice(parseInt(t.dataset.del, 10), 1);
+      saveUserPresets(list);
+      renderUserPresets();
+    }
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const list = loadUserPresets();
+    const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'binaural-presets.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error('Invalid format');
+        const cleaned = data
+          .filter(p => p && typeof p.left === 'number' && typeof p.right === 'number')
+          .map(p => ({
+            name: String(p.name || 'Imported').slice(0, 40),
+            left: clamp(p.left, 20, 1500),
+            right: clamp(p.right, 20, 1500),
+            volume: typeof p.volume === 'number' ? clamp(p.volume, 0, 1) : 0.25
+          }));
+        const existing = loadUserPresets();
+        saveUserPresets(existing.concat(cleaned));
+        renderUserPresets();
+      } catch (err) {
+        alert('Could not import presets: ' + err.message);
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // Initial
+  updateBeat();
+  renderUserPresets();
+
+  // Resize canvas on orientation change
+  window.addEventListener('resize', () => {
+    if (isPlaying) {
+      // force redraw size
+      canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+    }
+  });
+})();
+  </script>
+</body>
+</html>
