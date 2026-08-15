@@ -218,9 +218,22 @@
     .am-row {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 0.75rem;
       margin-bottom: 0.65rem;
       flex-wrap: wrap;
+    }
+
+    .am-panel.locked input[type="range"],
+    .am-panel.locked input[type="number"],
+    .am-panel.locked .noise-knob {
+      pointer-events: none;
+      opacity: 0.55;
+    }
+
+    .am-panel.locked .noise-knob {
+      cursor: default;
+      opacity: 0.4;
     }
 
     .am-fields {
@@ -628,7 +641,8 @@
     }
 
     #freqLinkBtn,
-    #freqLockBtn {
+    #freqLockBtn,
+    #amLockBtn {
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
@@ -651,15 +665,21 @@
       background: rgba(88, 166, 255, 0.1);
     }
 
-    #freqLockBtn.unlocked {
+    #freqLockBtn.unlocked,
+    #amLockBtn.unlocked {
       border-color: var(--accent);
       color: var(--accent);
       background: rgba(88, 166, 255, 0.1);
     }
 
     #freqLinkBtn:active,
-    #freqLockBtn:active {
+    #freqLockBtn:active,
+    #amLockBtn:active {
       transform: scale(0.97);
+    }
+
+    #amLockBtn[hidden] {
+      display: none;
     }
 
     .freq-controls.locked input[type="range"],
@@ -769,8 +789,9 @@
     <div class="am-section">
       <div class="am-row">
         <button type="button" id="amBtn" class="noise-toggle" aria-pressed="false" title="Toggle amplitude-modulated tone">AM tone: Off</button>
+        <button type="button" id="amLockBtn" class="locked" hidden aria-pressed="true" title="Unlock to edit AM settings">🔒 Locked</button>
       </div>
-      <div id="amPanel" class="am-panel" hidden>
+      <div id="amPanel" class="am-panel locked" hidden>
         <div class="volume-wrap" style="margin-bottom:0.65rem">
           <label for="amVolume">AM volume</label>
           <input type="range" id="amVolume" min="0" max="1" step="0.01" value="0.2">
@@ -856,6 +877,7 @@
   const noiseVolumeEl = document.getElementById('noiseVolume');
   const noiseKnob = document.getElementById('noiseKnob');
   const amBtn = document.getElementById('amBtn');
+  const amLockBtn = document.getElementById('amLockBtn');
   const amPanel = document.getElementById('amPanel');
   const amVolumeEl = document.getElementById('amVolume');
   const amCarrierEl = document.getElementById('amCarrier');
@@ -897,6 +919,7 @@
   const FREQ_MAX = 1500;
 
   let freqsLocked = true;
+  let amLocked = true;
   let freqsLinked = false;
   // Last committed pair — used so linked edits keep a stable difference
   let lastLeft = 100;
@@ -1097,12 +1120,27 @@
     return v;
   }
 
+  function setAmLocked(locked) {
+    amLocked = locked;
+    const controls = [amVolumeEl, amCarrierEl, amRateEl, amCarrierSlider, amRateSlider];
+    controls.forEach(el => { if (el) el.disabled = locked; });
+    if (amCarrierKnob) amCarrierKnob.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    if (amRateKnob) amRateKnob.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    amPanel.classList.toggle('locked', locked);
+    amLockBtn.classList.toggle('unlocked', !locked);
+    amLockBtn.classList.toggle('locked', locked);
+    amLockBtn.setAttribute('aria-pressed', locked ? 'true' : 'false');
+    amLockBtn.textContent = locked ? '🔒 Locked' : '🔓 Editing';
+    amLockBtn.title = locked ? 'Unlock to edit AM settings' : 'Lock AM settings to prevent accidental changes';
+  }
+
   function setAmEnabled(on) {
     amOn = on;
     amBtn.textContent = on ? 'AM tone: On' : 'AM tone: Off';
     amBtn.classList.toggle('on', on);
     amBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     amPanel.hidden = !on;
+    amLockBtn.hidden = !on;
     if (on) {
       ensureAudio();
       if (isPlaying && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1110,6 +1148,7 @@
       syncAmCarrierUI(parseFloat(amCarrierEl.value));
       syncAmRateUI(parseFloat(amRateEl.value));
       applyAmLevels(parseFloat(amVolumeEl.value) || 0);
+      setAmLocked(true); // always lock when showing / enabling AM
       if (isPlaying) requestWakeLock();
     } else {
       applyAmLevels(0);
@@ -1626,6 +1665,7 @@
     applyingPreset = false;
     // Always lock after loading a preset to avoid accidental edits
     setFreqsLocked(true);
+    setAmLocked(true);
   }
 
   // Call after any manual freq/volume change
@@ -1771,6 +1811,7 @@
     function onEnd() { finish(); }
     function onTouchStart(e) {
       if (dragging) return;
+      if (opts.isLocked && opts.isLocked()) return;
       e.preventDefault();
       dragging = true; mode = 'touch';
       center(); value = opts.getValue(); lastA = ang(e);
@@ -1781,6 +1822,7 @@
     }
     function onMouseDown(e) {
       if (dragging || e.button !== 0) return;
+      if (opts.isLocked && opts.isLocked()) return;
       e.preventDefault();
       dragging = true; mode = 'mouse';
       center(); value = opts.getValue(); lastA = ang(e);
@@ -1800,14 +1842,16 @@
     max: FREQ_MAX,
     turns: 8, // finer for wide Hz range
     getValue: () => parseFloat(amCarrierEl.value) || 200,
-    onChange: (v) => syncAmCarrierUI(v)
+    onChange: (v) => syncAmCarrierUI(v),
+    isLocked: () => amLocked
   });
   setupRelativeKnob(amRateKnob, {
     min: 0.1,
     max: 40,
     turns: 4,
     getValue: () => parseFloat(amRateEl.value) || 4,
-    onChange: (v) => syncAmRateUI(v)
+    onChange: (v) => syncAmRateUI(v),
+    isLocked: () => amLocked
   });
 
   function setNoiseKnobVisual(v) {
@@ -2033,6 +2077,10 @@
 
   freqLockBtn.addEventListener('click', () => {
     setFreqsLocked(!freqsLocked);
+  });
+
+  amLockBtn.addEventListener('click', () => {
+    setAmLocked(!amLocked);
   });
 
   // ---------- Fine-tune knobs ----------
