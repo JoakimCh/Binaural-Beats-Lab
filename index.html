@@ -136,6 +136,160 @@
       color: var(--text-muted);
     }
 
+    .noise-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .noise-toggle {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .noise-toggle.on {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.12);
+    }
+
+    .noise-toggle:active {
+      transform: scale(0.97);
+    }
+
+    .noise-volume-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .noise-volume-row input[type="range"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .noise-knob {
+      position: relative;
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      touch-action: none;
+      cursor: grab;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    .noise-knob:active,
+    .noise-knob.dragging {
+      cursor: grabbing;
+      border-color: var(--accent);
+      background: rgba(31, 111, 235, 0.18);
+    }
+
+    .am-section {
+      margin-bottom: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .am-section .section-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .am-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .am-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+
+    .am-field label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .am-field input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.45rem 0.55rem;
+      font-size: 0.95rem;
+      -moz-appearance: textfield;
+    }
+
+    .am-field input[type="number"]::-webkit-outer-spin-button,
+    .am-field input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .am-hint {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      line-height: 1.35;
+    }
+
+    .am-panel {
+      margin-top: 0.5rem;
+    }
+
+    .am-panel[hidden] {
+      display: none;
+    }
+
+    .am-control-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .am-control-row input[type="range"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .am-fields {
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 520px) {
+      .am-fields {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
@@ -551,8 +705,19 @@
     <div class="play-row">
       <button id="playBtn" aria-label="Play">▶</button>
       <div class="volume-wrap">
-        <label for="volume">Volume</label>
+        <label for="volume">Tones volume</label>
         <input type="range" id="volume" min="0" max="1" step="0.01" value="0.25">
+      </div>
+    </div>
+
+    <div class="noise-row">
+      <button type="button" id="noiseBtn" class="noise-toggle" aria-pressed="false" title="Toggle white noise">White noise: Off</button>
+      <div class="volume-wrap">
+        <label for="noiseVolume">Noise volume</label>
+        <div class="noise-volume-row">
+          <input type="range" id="noiseVolume" min="0" max="1" step="0.01" value="0.08">
+          <div class="noise-knob" id="noiseKnob" role="slider" aria-label="Fine tune noise volume" aria-valuemin="0" aria-valuemax="1" title="Fine tune noise volume"></div>
+        </div>
       </div>
     </div>
 
@@ -600,6 +765,37 @@
     </div>
 
     <canvas id="viz" width="600" height="64" aria-hidden="true"></canvas>
+
+    <div class="am-section">
+      <div class="am-row">
+        <button type="button" id="amBtn" class="noise-toggle" aria-pressed="false" title="Toggle amplitude-modulated tone">AM tone: Off</button>
+      </div>
+      <div id="amPanel" class="am-panel" hidden>
+        <div class="volume-wrap" style="margin-bottom:0.65rem">
+          <label for="amVolume">AM volume</label>
+          <input type="range" id="amVolume" min="0" max="1" step="0.01" value="0.2">
+        </div>
+        <div class="am-fields">
+          <div class="am-field">
+            <label for="amCarrier">Tone (Hz)</label>
+            <div class="am-control-row">
+              <input type="range" id="amCarrierSlider" min="40" max="600" step="1" value="200">
+              <div class="noise-knob" id="amCarrierKnob" role="slider" aria-label="Fine tune AM tone frequency" title="Fine tune tone"></div>
+            </div>
+            <input type="number" id="amCarrier" min="20" max="1500" step="0.01" value="200" inputmode="decimal">
+          </div>
+          <div class="am-field">
+            <label for="amRate">Modulation (Hz)</label>
+            <div class="am-control-row">
+              <input type="range" id="amRateSlider" min="0.1" max="40" step="0.1" value="4">
+              <div class="noise-knob" id="amRateKnob" role="slider" aria-label="Fine tune modulation rate" title="Fine tune modulation"></div>
+            </div>
+            <input type="number" id="amRate" min="0.1" max="40" step="0.01" value="4" inputmode="decimal">
+          </div>
+        </div>
+        <p class="am-hint">Same signal in both ears — pulsed tone at the modulation rate (monaural / isochronic-style). Works without headphones; can run with binaural tones.</p>
+      </div>
+    </div>
 
     <div class="status-bar">
       <span class="status-pill" id="audioStatus">Audio stopped</span>
@@ -656,6 +852,18 @@
   // ---------- DOM ----------
   const playBtn = document.getElementById('playBtn');
   const volumeEl = document.getElementById('volume');
+  const noiseBtn = document.getElementById('noiseBtn');
+  const noiseVolumeEl = document.getElementById('noiseVolume');
+  const noiseKnob = document.getElementById('noiseKnob');
+  const amBtn = document.getElementById('amBtn');
+  const amPanel = document.getElementById('amPanel');
+  const amVolumeEl = document.getElementById('amVolume');
+  const amCarrierEl = document.getElementById('amCarrier');
+  const amRateEl = document.getElementById('amRate');
+  const amCarrierSlider = document.getElementById('amCarrierSlider');
+  const amRateSlider = document.getElementById('amRateSlider');
+  const amCarrierKnob = document.getElementById('amCarrierKnob');
+  const amRateKnob = document.getElementById('amRateKnob');
   const leftSlider = document.getElementById('leftSlider');
   const rightSlider = document.getElementById('rightSlider');
   const leftFreq = document.getElementById('leftFreq');
@@ -707,6 +915,21 @@
   let animId = null;
   let startTime = 0;
 
+  let noiseSource = null;
+  let noiseGain = null;
+  let noiseBuffer = null;
+  let noiseOn = false;
+
+  // Amplitude-modulated tone (carrier + LFO → gain)
+  let amCarrier = null;
+  let amLfo = null;
+  let amLfoDepth = null;
+  let amGain = null;
+  let amOn = false;
+  // Shared mix + limiter (limiter only engages meaningfully when AM is on)
+  let mixBus = null;
+  let limiter = null;
+
   function ensureAudio() {
     if (audioCtx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -727,7 +950,15 @@
     leftGain.connect(merger, 0, 0);
     rightGain.connect(merger, 0, 1);
     merger.connect(masterGain);
-    masterGain.connect(audioCtx.destination);
+
+    // Mix bus → optional limiter → speakers
+    mixBus = audioCtx.createGain();
+    mixBus.gain.value = 1;
+    limiter = audioCtx.createDynamicsCompressor();
+    masterGain.connect(mixBus);
+    mixBus.connect(limiter);
+    limiter.connect(audioCtx.destination);
+    setLimiterForAm(false);
 
     leftOsc.frequency.value = parseFloat(leftFreq.value);
     rightOsc.frequency.value = parseFloat(rightFreq.value);
@@ -739,6 +970,152 @@
     // Start muted until play
     leftGain.gain.value = 0;
     rightGain.gain.value = 0;
+
+    // Noise → destination directly (bypass limiter). Otherwise AM envelope
+    // gain-reduction pumps the noise and sounds like volume modulation.
+    noiseGain = audioCtx.createGain();
+    noiseGain.gain.value = 0;
+    noiseGain.connect(audioCtx.destination);
+
+    // AM tone: carrier sine, LFO modulates amplitude 0↔volume (both ears same)
+    amCarrier = audioCtx.createOscillator();
+    amLfo = audioCtx.createOscillator();
+    amLfoDepth = audioCtx.createGain();
+    amGain = audioCtx.createGain();
+    amCarrier.type = 'sine';
+    amLfo.type = 'sine';
+    amCarrier.frequency.value = clamp(parseFloat(amCarrierEl.value), FREQ_MIN, FREQ_MAX);
+    amLfo.frequency.value = clamp(parseFloat(amRateEl.value), 0.1, 40);
+    amGain.gain.value = 0; // start silent until AM is turned on
+    amLfoDepth.gain.value = 0;
+    amCarrier.connect(amGain);
+    amGain.connect(mixBus);
+    amLfo.connect(amLfoDepth);
+    amLfoDepth.connect(amGain.gain);
+    amCarrier.start();
+    amLfo.start();
+  }
+
+  // Soft limiter only when AM is active (tones+noise alone stay unprocessed)
+  function setLimiterForAm(active) {
+    if (!limiter) return;
+    if (active) {
+      limiter.threshold.setTargetAtTime(-8, audioCtx.currentTime, 0.01);
+      limiter.knee.setTargetAtTime(8, audioCtx.currentTime, 0.01);
+      limiter.ratio.setTargetAtTime(12, audioCtx.currentTime, 0.01);
+      limiter.attack.setTargetAtTime(0.003, audioCtx.currentTime, 0.01);
+      limiter.release.setTargetAtTime(0.12, audioCtx.currentTime, 0.01);
+    } else {
+      // Ratio 1 + threshold 0 ≈ transparent bypass
+      limiter.threshold.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      limiter.knee.setTargetAtTime(0, audioCtx.currentTime, 0.01);
+      limiter.ratio.setTargetAtTime(1, audioCtx.currentTime, 0.01);
+      limiter.attack.setTargetAtTime(0.003, audioCtx.currentTime, 0.01);
+      limiter.release.setTargetAtTime(0.05, audioCtx.currentTime, 0.01);
+    }
+  }
+
+  function makeNoiseBuffer() {
+    // ~2s stereo white noise, looped
+    const len = Math.floor(audioCtx.sampleRate * 2);
+    const buffer = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buffer.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+    }
+    return buffer;
+  }
+
+  function ensureNoiseSource() {
+    if (!audioCtx) return;
+    if (noiseSource) return;
+    if (!noiseBuffer) noiseBuffer = makeNoiseBuffer();
+    noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    noiseSource.loop = true;
+    noiseSource.connect(noiseGain);
+    noiseSource.start();
+  }
+
+  function setNoiseVolume(v) {
+    if (!noiseGain || !audioCtx) return;
+    // Audible only when master is playing and noise is enabled
+    const level = (isPlaying && noiseOn) ? v : 0;
+    noiseGain.gain.setTargetAtTime(level, audioCtx.currentTime, 0.02);
+  }
+
+  function setNoiseEnabled(on) {
+    noiseOn = on;
+    noiseBtn.textContent = on ? 'White noise: On' : 'White noise: Off';
+    noiseBtn.classList.toggle('on', on);
+    noiseBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on && isPlaying) {
+      ensureAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      ensureNoiseSource();
+      setNoiseVolume(parseFloat(noiseVolumeEl.value) || 0);
+      requestWakeLock();
+    } else {
+      setNoiseVolume(0);
+      if (!isPlaying) releaseWakeLock();
+    }
+  }
+
+  function applyAmLevels(volume) {
+    if (!amGain || !audioCtx) return;
+    const now = audioCtx.currentTime;
+    if (!amOn || !isPlaying) {
+      amGain.gain.setTargetAtTime(0, now, 0.03);
+      amLfoDepth.gain.setTargetAtTime(0, now, 0.03);
+      return;
+    }
+    const v = Math.max(0, Math.min(1, volume));
+    // gain = v/2 + (v/2)*sin(ωt) → 0 … v
+    amGain.gain.setTargetAtTime(v / 2, now, 0.03);
+    amLfoDepth.gain.setTargetAtTime(v / 2, now, 0.03);
+  }
+
+  function syncAmCarrierUI(v) {
+    v = clamp(v, FREQ_MIN, FREQ_MAX);
+    amCarrierEl.value = Math.round(v * 100) / 100;
+    amCarrierSlider.value = Math.min(600, Math.max(40, Math.round(v)));
+    if (amCarrier && audioCtx) {
+      amCarrier.frequency.setTargetAtTime(v, audioCtx.currentTime, 0.01);
+    }
+    return v;
+  }
+
+  function syncAmRateUI(v) {
+    v = clamp(v, 0.1, 40);
+    amRateEl.value = Math.round(v * 100) / 100;
+    amRateSlider.value = v;
+    if (amLfo && audioCtx) {
+      amLfo.frequency.setTargetAtTime(v, audioCtx.currentTime, 0.01);
+    }
+    return v;
+  }
+
+  function setAmEnabled(on) {
+    amOn = on;
+    amBtn.textContent = on ? 'AM tone: On' : 'AM tone: Off';
+    amBtn.classList.toggle('on', on);
+    amBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    amPanel.hidden = !on;
+    if (on) {
+      ensureAudio();
+      if (isPlaying && audioCtx.state === 'suspended') audioCtx.resume();
+      setLimiterForAm(true);
+      syncAmCarrierUI(parseFloat(amCarrierEl.value));
+      syncAmRateUI(parseFloat(amRateEl.value));
+      applyAmLevels(parseFloat(amVolumeEl.value) || 0);
+      if (isPlaying) requestWakeLock();
+    } else {
+      applyAmLevels(0);
+      setLimiterForAm(false);
+      if (!isPlaying) releaseWakeLock();
+    }
   }
 
   function setFrequencies(l, r) {
@@ -753,18 +1130,31 @@
     masterGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
   }
 
+  // Master play/pause — gates tones, noise, and AM together
   function startAudio() {
     ensureAudio();
     if (audioCtx.state === 'suspended') {
       audioCtx.resume();
     }
+    isPlaying = true;
     const now = audioCtx.currentTime;
+    // Binaural tones (use Tones volume for level; turn down to silence beats only)
     leftGain.gain.setTargetAtTime(1, now, 0.015);
     rightGain.gain.setTargetAtTime(1, now, 0.015);
-    isPlaying = true;
+    setVolume(parseFloat(volumeEl.value) || 0);
+    // Noise / AM if armed
+    if (noiseOn) {
+      ensureNoiseSource();
+      setNoiseVolume(parseFloat(noiseVolumeEl.value) || 0);
+    }
+    if (amOn) {
+      syncAmCarrierUI(parseFloat(amCarrierEl.value));
+      syncAmRateUI(parseFloat(amRateEl.value));
+      applyAmLevels(parseFloat(amVolumeEl.value) || 0);
+    }
     playBtn.textContent = '⏸';
     playBtn.classList.add('playing');
-    playBtn.setAttribute('aria-label', 'Pause');
+    playBtn.setAttribute('aria-label', 'Pause all audio');
     audioStatus.textContent = 'Playing';
     audioStatus.classList.add('on');
     startTime = performance.now();
@@ -774,13 +1164,15 @@
 
   function stopAudio() {
     if (!audioCtx) return;
+    isPlaying = false;
     const now = audioCtx.currentTime;
     leftGain.gain.setTargetAtTime(0, now, 0.02);
     rightGain.gain.setTargetAtTime(0, now, 0.02);
-    isPlaying = false;
+    setNoiseVolume(0);
+    applyAmLevels(0);
     playBtn.textContent = '▶';
     playBtn.classList.remove('playing');
-    playBtn.setAttribute('aria-label', 'Play');
+    playBtn.setAttribute('aria-label', 'Play all audio');
     audioStatus.textContent = 'Audio stopped';
     audioStatus.classList.remove('on');
     releaseWakeLock();
@@ -1104,9 +1496,60 @@
     const r = parseFloat(rightFreq.value) || 0;
     const v = parseFloat(volumeEl.value) || 0;
     const pv = p.volume != null ? p.volume : 0.25;
+    const pNoise = !!p.noiseOn;
+    const pAm = !!p.amOn;
+    const pNoiseVol = p.noiseVolume != null ? p.noiseVolume : 0.08;
+    const pAmVol = p.amVolume != null ? p.amVolume : 0.2;
+    const pAmCarrier = p.amCarrier != null ? p.amCarrier : 200;
+    const pAmRate = p.amRate != null ? p.amRate : 4;
     return Math.abs(p.left - l) < 0.005
       && Math.abs(p.right - r) < 0.005
-      && Math.abs(pv - v) < 0.005;
+      && Math.abs(pv - v) < 0.005
+      && pNoise === noiseOn
+      && pAm === amOn
+      && (!pNoise || Math.abs(pNoiseVol - (parseFloat(noiseVolumeEl.value) || 0)) < 0.005)
+      && (!pAm || (
+        Math.abs(pAmVol - (parseFloat(amVolumeEl.value) || 0)) < 0.005
+        && Math.abs(pAmCarrier - (parseFloat(amCarrierEl.value) || 0)) < 0.05
+        && Math.abs(pAmRate - (parseFloat(amRateEl.value) || 0)) < 0.05
+      ));
+  }
+
+  function snapshotExtraAudio() {
+    return {
+      noiseOn: !!noiseOn,
+      noiseVolume: parseFloat(noiseVolumeEl.value) || 0,
+      amOn: !!amOn,
+      amVolume: parseFloat(amVolumeEl.value) || 0,
+      amCarrier: parseFloat(amCarrierEl.value) || 200,
+      amRate: parseFloat(amRateEl.value) || 4
+    };
+  }
+
+  function applyExtraAudio(p) {
+    // Built-ins omit these → treated as off
+    const wantNoise = !!p.noiseOn;
+    const wantAm = !!p.amOn;
+    noiseVolumeEl.value = p.noiseVolume != null ? clamp(p.noiseVolume, 0, 1) : 0.08;
+    if (typeof setNoiseKnobVisual === 'function') {
+      setNoiseKnobVisual(parseFloat(noiseVolumeEl.value) || 0);
+    }
+    amVolumeEl.value = p.amVolume != null ? clamp(p.amVolume, 0, 1) : 0.2;
+    const carrier = p.amCarrier != null ? p.amCarrier : 200;
+    const rate = p.amRate != null ? p.amRate : 4;
+    // Set UI values before enabling so start uses correct params
+    amCarrierEl.value = carrier;
+    amRateEl.value = rate;
+    if (amCarrierSlider) amCarrierSlider.value = Math.min(600, Math.max(40, Math.round(carrier)));
+    if (amRateSlider) amRateSlider.value = rate;
+    setNoiseEnabled(wantNoise);
+    setAmEnabled(wantAm);
+    if (wantAm) {
+      syncAmCarrierUI(carrier);
+      syncAmRateUI(rate);
+    }
+    setNoiseVolume(parseFloat(noiseVolumeEl.value) || 0);
+    applyAmLevels(parseFloat(amVolumeEl.value) || 0);
   }
 
   function rebuildPresetSelect(selectKey) {
@@ -1157,13 +1600,13 @@
 
   function persistSession() {
     try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({
+      localStorage.setItem(SESSION_KEY, JSON.stringify(Object.assign({
         key: currentPresetKey,
         name: lastPresetName,
         left: parseFloat(leftFreq.value),
         right: parseFloat(rightFreq.value),
         volume: parseFloat(volumeEl.value)
-      }));
+      }, snapshotExtraAudio())));
     } catch (_) {}
   }
 
@@ -1174,6 +1617,7 @@
     volumeEl.value = p.volume != null ? p.volume : 0.25;
     syncFromInputs();
     setVolume(parseFloat(volumeEl.value));
+    applyExtraAudio(p);
     currentPresetKey = key || 'custom';
     if (p.name) lastPresetName = p.name;
     presetSelect.value = currentPresetKey;
@@ -1210,6 +1654,302 @@
     setVolume(parseFloat(volumeEl.value));
     markCustomIfDirty();
   });
+
+  noiseBtn.addEventListener('click', () => {
+    setNoiseEnabled(!noiseOn);
+    markCustomIfDirty();
+  });
+
+  noiseVolumeEl.addEventListener('input', () => {
+    setNoiseVolume(parseFloat(noiseVolumeEl.value) || 0);
+    setNoiseKnobVisual(parseFloat(noiseVolumeEl.value) || 0);
+    markCustomIfDirty();
+  });
+
+  amBtn.addEventListener('click', () => {
+    setAmEnabled(!amOn);
+    markCustomIfDirty();
+  });
+
+  amVolumeEl.addEventListener('input', () => {
+    applyAmLevels(parseFloat(amVolumeEl.value) || 0);
+    markCustomIfDirty();
+  });
+
+  amCarrierSlider.addEventListener('input', () => {
+    const frac = (parseFloat(amCarrierEl.value) || 0) - Math.floor(parseFloat(amCarrierEl.value) || 0);
+    syncAmCarrierUI(parseFloat(amCarrierSlider.value) + frac);
+  });
+  amRateSlider.addEventListener('input', () => {
+    syncAmRateUI(parseFloat(amRateSlider.value));
+  });
+
+  function commitAmCarrier() {
+    let v = parseFloat(amCarrierEl.value);
+    if (isNaN(v)) v = 200;
+    syncAmCarrierUI(v);
+  }
+
+  function commitAmRate() {
+    let v = parseFloat(amRateEl.value);
+    if (isNaN(v)) v = 4;
+    syncAmRateUI(v);
+  }
+
+  amCarrierEl.addEventListener('change', commitAmCarrier);
+  amCarrierEl.addEventListener('blur', commitAmCarrier);
+  amRateEl.addEventListener('change', commitAmRate);
+  amRateEl.addEventListener('blur', commitAmRate);
+
+  // Relative multi-turn knobs for AM carrier / modulation
+  function setupRelativeKnob(knob, opts) {
+    const turns = opts.turns || 4;
+    let dragging = false;
+    let mode = null;
+    let cx = 0, cy = 0, lastA = 0, value = 0;
+
+    function center() {
+      const r = knob.getBoundingClientRect();
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
+    }
+    function pt(e) {
+      if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      return { x: e.clientX, y: e.clientY };
+    }
+    function ang(e) {
+      const p = pt(e);
+      return Math.atan2(p.y - cy, p.x - cx);
+    }
+    function ensureInd() {
+      let ind = knob.querySelector('.knob-ind');
+      if (!ind) {
+        ind = document.createElement('div');
+        ind.className = 'knob-ind';
+        ind.style.cssText = 'position:absolute;left:50%;top:50%;width:2px;height:12px;margin-left:-1px;margin-top:-16px;background:var(--accent);border-radius:2px;transform-origin:50% 16px;pointer-events:none';
+        knob.appendChild(ind);
+      }
+      return ind;
+    }
+    function setInd(a) {
+      ensureInd().style.transform = 'rotate(' + (a * 180 / Math.PI + 90) + 'deg)';
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      const a = ang(e);
+      let d = a - lastA;
+      if (d > Math.PI) d -= Math.PI * 2;
+      if (d < -Math.PI) d += Math.PI * 2;
+      lastA = a;
+      // turns full rotations span (max - min)
+      const span = opts.max - opts.min;
+      value += (d / (Math.PI * 2 * turns)) * span;
+      if (value < opts.min) value = opts.min;
+      if (value > opts.max) value = opts.max;
+      opts.onChange(value);
+      setInd(a);
+    }
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      mode = null;
+      knob.classList.remove('dragging');
+      document.removeEventListener('touchmove', onTouchMove, true);
+      document.removeEventListener('touchend', onEnd, true);
+      document.removeEventListener('touchcancel', onEnd, true);
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onEnd, true);
+      value = opts.getValue();
+      // Rest indicator to value-based angle within one turn
+      const frac = (value - opts.min) / (opts.max - opts.min);
+      ensureInd().style.transform = 'rotate(' + (frac * 360) + 'deg)';
+    }
+    function onTouchMove(e) { if (mode === 'touch') onMove(e); }
+    function onMouseMove(e) { if (mode === 'mouse') onMove(e); }
+    function onEnd() { finish(); }
+    function onTouchStart(e) {
+      if (dragging) return;
+      e.preventDefault();
+      dragging = true; mode = 'touch';
+      center(); value = opts.getValue(); lastA = ang(e);
+      knob.classList.add('dragging');
+      document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+      document.addEventListener('touchend', onEnd, { capture: true });
+      document.addEventListener('touchcancel', onEnd, { capture: true });
+    }
+    function onMouseDown(e) {
+      if (dragging || e.button !== 0) return;
+      e.preventDefault();
+      dragging = true; mode = 'mouse';
+      center(); value = opts.getValue(); lastA = ang(e);
+      knob.classList.add('dragging');
+      window.addEventListener('mousemove', onMouseMove, true);
+      window.addEventListener('mouseup', onEnd, true);
+    }
+    knob.addEventListener('touchstart', onTouchStart, { passive: false });
+    knob.addEventListener('mousedown', onMouseDown);
+    // initial indicator
+    const frac0 = (opts.getValue() - opts.min) / (opts.max - opts.min);
+    ensureInd().style.transform = 'rotate(' + (frac0 * 360) + 'deg)';
+  }
+
+  setupRelativeKnob(amCarrierKnob, {
+    min: FREQ_MIN,
+    max: FREQ_MAX,
+    turns: 8, // finer for wide Hz range
+    getValue: () => parseFloat(amCarrierEl.value) || 200,
+    onChange: (v) => syncAmCarrierUI(v)
+  });
+  setupRelativeKnob(amRateKnob, {
+    min: 0.1,
+    max: 40,
+    turns: 4,
+    getValue: () => parseFloat(amRateEl.value) || 4,
+    onChange: (v) => syncAmRateUI(v)
+  });
+
+  function setNoiseKnobVisual(v) {
+    // Map 0–1 volume onto a full turn for the indicator
+    const deg = Math.max(0, Math.min(1, v)) * 360;
+    let indicator = noiseKnob.querySelector('.knob-ind');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.className = 'knob-ind';
+      indicator.style.cssText = [
+        'position:absolute',
+        'left:50%',
+        'top:50%',
+        'width:2px',
+        'height:12px',
+        'margin-left:-1px',
+        'margin-top:-16px',
+        'background:var(--accent)',
+        'border-radius:2px',
+        'transform-origin:50% 16px',
+        'pointer-events:none'
+      ].join(';');
+      noiseKnob.appendChild(indicator);
+    }
+    indicator.style.transform = 'rotate(' + deg + 'deg)';
+    noiseKnob.setAttribute('aria-valuenow', v.toFixed(3));
+  }
+
+  function applyNoiseVolume(v) {
+    v = Math.max(0, Math.min(1, v));
+    // Snap to 0.001 for fine control
+    v = Math.round(v * 1000) / 1000;
+    noiseVolumeEl.value = v;
+    setNoiseVolume(v);
+    setNoiseKnobVisual(v);
+  }
+
+  // Fine-tune noise volume: relative rotation, 4 full turns = 0→1, hard clamp (no wrap)
+  (function setupNoiseKnob() {
+    const TURNS_FULL_SCALE = 4;
+    let dragging = false;
+    let mode = null;
+    let centerX = 0;
+    let centerY = 0;
+    let lastAngle = 0;
+    let value = 0;
+
+    function cacheCenter() {
+      const r = noiseKnob.getBoundingClientRect();
+      centerX = r.left + r.width / 2;
+      centerY = r.top + r.height / 2;
+    }
+
+    function xy(e) {
+      if (e.touches && e.touches.length) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      if (e.changedTouches && e.changedTouches.length) {
+        return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function getAngle(e) {
+      const p = xy(e);
+      return Math.atan2(p.y - centerY, p.x - centerX);
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      const a = getAngle(e);
+      let d = a - lastAngle;
+      if (d > Math.PI) d -= Math.PI * 2;
+      if (d < -Math.PI) d += Math.PI * 2;
+      lastAngle = a;
+      // 1 full turn = 1/4 of volume range
+      value += d / (Math.PI * 2 * TURNS_FULL_SCALE);
+      if (value < 0) value = 0;
+      if (value > 1) value = 1;
+      applyNoiseVolume(value);
+      const ind = noiseKnob.querySelector('.knob-ind');
+      if (ind) ind.style.transform = 'rotate(' + (a * (180 / Math.PI) + 90) + 'deg)';
+    }
+
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      mode = null;
+      noiseKnob.classList.remove('dragging');
+      document.removeEventListener('touchmove', onTouchMove, true);
+      document.removeEventListener('touchend', onTouchEnd, true);
+      document.removeEventListener('touchcancel', onTouchEnd, true);
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onMouseUp, true);
+      value = parseFloat(noiseVolumeEl.value) || 0;
+      setNoiseKnobVisual(value);
+    }
+
+    function onTouchMove(e) {
+      if (mode !== 'touch') return;
+      onMove(e);
+    }
+    function onTouchEnd() { finish(); }
+
+    function onTouchStart(e) {
+      if (dragging) return;
+      e.preventDefault();
+      dragging = true;
+      mode = 'touch';
+      cacheCenter();
+      value = parseFloat(noiseVolumeEl.value) || 0;
+      lastAngle = getAngle(e);
+      noiseKnob.classList.add('dragging');
+      document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+      document.addEventListener('touchend', onTouchEnd, { capture: true });
+      document.addEventListener('touchcancel', onTouchEnd, { capture: true });
+    }
+
+    function onMouseMove(e) {
+      if (mode !== 'mouse') return;
+      onMove(e);
+    }
+    function onMouseUp() { finish(); }
+
+    function onMouseDown(e) {
+      if (dragging || e.button !== 0) return;
+      e.preventDefault();
+      dragging = true;
+      mode = 'mouse';
+      cacheCenter();
+      value = parseFloat(noiseVolumeEl.value) || 0;
+      lastAngle = getAngle(e);
+      noiseKnob.classList.add('dragging');
+      window.addEventListener('mousemove', onMouseMove, true);
+      window.addEventListener('mouseup', onMouseUp, true);
+    }
+
+    noiseKnob.addEventListener('touchstart', onTouchStart, { passive: false });
+    noiseKnob.addEventListener('mousedown', onMouseDown);
+    setNoiseKnobVisual(parseFloat(noiseVolumeEl.value) || 0);
+  })();
 
   leftSlider.addEventListener('input', () => {
     if (freqsLocked) return;
@@ -1465,12 +2205,12 @@
 
   confirmSave.addEventListener('click', () => {
     const name = (presetName.value.trim() || lastPresetName || 'My preset').slice(0, 40);
-    const entry = {
+    const entry = Object.assign({
       name,
       left: parseFloat(leftFreq.value),
       right: parseFloat(rightFreq.value),
       volume: parseFloat(volumeEl.value)
-    };
+    }, snapshotExtraAudio());
     const list = loadUserPresets();
     const existingIdx = list.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
     if (existingIdx >= 0) {
@@ -1531,7 +2271,13 @@
               name: String(p.name || 'Imported').slice(0, 40),
               left: clamp(p.left, FREQ_MIN, FREQ_MAX),
               right: clamp(p.right, FREQ_MIN, FREQ_MAX),
-              volume: typeof p.volume === 'number' ? clamp(p.volume, 0, 1) : 0.25
+              volume: typeof p.volume === 'number' ? clamp(p.volume, 0, 1) : 0.25,
+              noiseOn: !!p.noiseOn,
+              noiseVolume: typeof p.noiseVolume === 'number' ? clamp(p.noiseVolume, 0, 1) : 0.08,
+              amOn: !!p.amOn,
+              amVolume: typeof p.amVolume === 'number' ? clamp(p.amVolume, 0, 1) : 0.2,
+              amCarrier: typeof p.amCarrier === 'number' ? clamp(p.amCarrier, FREQ_MIN, FREQ_MAX) : 200,
+              amRate: typeof p.amRate === 'number' ? clamp(p.amRate, 0.1, 40) : 4
             };
             const i = existing.findIndex(e => e.name.toLowerCase() === entry.name.toLowerCase());
             if (i >= 0) existing[i] = entry;
@@ -1560,6 +2306,7 @@
         volumeEl.value = typeof s.volume === 'number' ? s.volume : 0.25;
         syncFromInputs();
         setVolume(parseFloat(volumeEl.value));
+        applyExtraAudio(s);
         applyingPreset = false;
         if (s.name) lastPresetName = s.name;
         if (s.key && s.key !== 'custom' && getPresetByKey(s.key) && matchesPreset(getPresetByKey(s.key))) {
