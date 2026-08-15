@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Binaural Beats Lab</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: #1f6feb;
+      --success: #3fb950;
+      --danger: #f85149;
+      --warning: #d29922;
+      --radius: 12px;
+      --gap: 1rem;
+      --touch: 48px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: var(--gap);
+    }
+
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .headphones {
+      background: #1c2128;
+      border: 1px solid var(--accent-dim);
+      color: var(--accent);
+      text-align: center;
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      margin-bottom: var(--gap);
+    }
+
+    /* Play controls */
+    .play-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    #playBtn {
+      flex: 0 0 auto;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 4px 14px rgba(31, 111, 235, 0.4);
+    }
+
+    #playBtn:active {
+      transform: scale(0.96);
+    }
+
+    #playBtn.playing {
+      background: var(--danger);
+      box-shadow: 0 4px 14px rgba(248, 81, 73, 0.35);
+    }
+
+    .volume-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .volume-wrap label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid #fff;
+    }
+
+    /* Frequency controls */
+    .freq-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    @media (max-width: 420px) {
+      .freq-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .freq-box {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 0.75rem;
+    }
+
+    .freq-box label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    /* Number left; fine-tune group truly centered in the card */
+    .freq-display-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      margin-bottom: 0.45rem;
+      min-height: 48px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .freq-value {
+      grid-column: 1;
+      justify-self: start;
+      min-width: 4.2em;
+      font-size: 1.45rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+
+    .fine-group {
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .freq-fine-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .knob {
+      position: relative;
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      touch-action: none;
+      cursor: grab;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+      transition: border-color 0.15s, background 0.15s;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .knob:active,
+    .knob.dragging {
+      cursor: grabbing;
+      border-color: var(--accent);
+      background: rgba(31, 111, 235, 0.18);
+    }
+
+    .freq-box input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      font-size: 1rem;
+      margin-top: 0.35rem;
+      -moz-appearance: textfield;
+    }
+
+    .freq-box input[type="number"]::-webkit-outer-spin-button,
+    .freq-box input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .beat-display {
+      text-align: center;
+      padding: 0.85rem;
+      background: var(--surface2);
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .beat-display .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .beat-display .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .beat-display .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* Visualizer */
+    #viz {
+      width: 100%;
+      height: 64px;
+      background: var(--bg);
+      border-radius: 8px;
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    /* Presets */
+    .preset-select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      margin-bottom: 0.75rem;
+      min-height: var(--touch);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    button.btn {
+      flex: 1;
+      min-width: 120px;
+      min-height: var(--touch);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      padding: 0.6rem 0.8rem;
+      transition: background 0.15s;
+    }
+
+    button.btn:active {
+      background: var(--border);
+    }
+
+    button.btn.primary {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.btn.danger {
+      color: var(--danger);
+      border-color: #6e2c2c;
+    }
+
+    /* Status / wake lock */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 999px;
+      background: var(--surface2);
+      border: 1px solid transparent;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+
+    .status-pill.on {
+      color: var(--success);
+    }
+
+    #wakeStatus {
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #wakeStatus:not(.on) {
+      border-color: var(--border);
+    }
+
+    #wakeStatus:not(.on):active,
+    #wakeStatus:not(.on):hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.08);
+    }
+
+    /* Info / disclaimer */
+    .info {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .info a {
+      color: var(--accent);
+    }
+
+    details {
+      margin-top: 0.5rem;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-size: 0.85rem;
+    }
+
+    /* Save form */
+    #saveForm {
+      display: none;
+      margin-top: 0.75rem;
+      gap: 0.5rem;
+      flex-direction: column;
+    }
+
+    #saveForm.visible {
+      display: flex;
+    }
+
+    #saveForm input[type="text"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      font-size: 1rem;
+      min-height: var(--touch);
+    }
+
+    /* Frequency lock / edit toggle */
+    .freq-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .freq-header .section-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    .freq-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    #freqLinkBtn,
+    #freqLockBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      min-height: 36px;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    #freqLinkBtn.linked {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.1);
+    }
+
+    #freqLockBtn.unlocked {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.1);
+    }
+
+    #freqLinkBtn:active,
+    #freqLockBtn:active {
+      transform: scale(0.97);
+    }
+
+    .freq-controls.locked input[type="range"],
+    .freq-controls.locked input[type="number"],
+    .freq-controls.locked .knob,
+    .freq-controls.locked .fine-group {
+      pointer-events: none;
+    }
+
+    .freq-controls.locked .knob {
+      touch-action: auto;
+      cursor: default;
+      opacity: 0.4;
+    }
+
+    .freq-controls.locked input[type="range"],
+    .freq-controls.locked input[type="number"] {
+      opacity: 0.55;
+    }
+
+    .freq-controls.locked input[type="number"] {
+      color: var(--text-muted);
+    }
+
+    /* Small screens refinements */
+    @media (max-width: 380px) {
+      h1 { font-size: 1.3rem; }
+      .freq-value { font-size: 1.3rem; }
+      .beat-display .value { font-size: 1.5rem; }
+      #playBtn { width: 64px; height: 64px; font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Binaural Beats Lab</h1>
+  <p class="subtitle">Pure sine tones · inspired by Monroe Institute research</p>
+
+  <div class="headphones">
+    🎧 Headphones required for true binaural effect
+  </div>
+
+  <div class="card">
+    <div class="play-row">
+      <button id="playBtn" aria-label="Play">▶</button>
+      <div class="volume-wrap">
+        <label for="volume">Volume</label>
+        <input type="range" id="volume" min="0" max="1" step="0.01" value="0.25">
+      </div>
+    </div>
+
+    <div class="freq-header">
+      <span class="section-label">Frequencies</span>
+      <div class="freq-header-actions">
+        <button type="button" id="freqLinkBtn" aria-pressed="false" title="Link ears: keep the same binaural difference when changing either frequency">🔗 Unlinked</button>
+        <button type="button" id="freqLockBtn" class="locked" aria-pressed="true" title="Unlock to edit frequencies">🔒 Locked</button>
+      </div>
+    </div>
+
+    <div class="freq-controls locked" id="freqControls">
+      <div class="freq-grid">
+        <div class="freq-box">
+          <label for="leftFreq">Left ear (Hz)</label>
+          <div class="freq-display-wrap">
+            <div class="freq-value" id="leftDisplay">100.00</div>
+            <div class="fine-group">
+              <span class="freq-fine-hint">Fine tune</span>
+              <div class="knob" id="leftKnob" role="slider" aria-label="Fine tune left frequency" aria-valuemin="20" aria-valuemax="1500" aria-valuenow="100" aria-disabled="true"></div>
+            </div>
+          </div>
+          <input type="range" id="leftSlider" min="40" max="600" step="1" value="100" disabled>
+          <input type="number" id="leftFreq" min="20" max="1500" step="0.01" value="100" inputmode="decimal" disabled>
+        </div>
+        <div class="freq-box">
+          <label for="rightFreq">Right ear (Hz)</label>
+          <div class="freq-display-wrap">
+            <div class="freq-value" id="rightDisplay">104.00</div>
+            <div class="fine-group">
+              <span class="freq-fine-hint">Fine tune</span>
+              <div class="knob" id="rightKnob" role="slider" aria-label="Fine tune right frequency" aria-valuemin="20" aria-valuemax="1500" aria-valuenow="104" aria-disabled="true"></div>
+            </div>
+          </div>
+          <input type="range" id="rightSlider" min="40" max="600" step="1" value="104" disabled>
+          <input type="number" id="rightFreq" min="20" max="1500" step="0.01" value="104" inputmode="decimal" disabled>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat-display">
+      <div class="label">Binaural beat</div>
+      <div class="value" id="beatDisplay">4.0 Hz</div>
+      <div class="hint" id="beatHint">Theta range · meditative / Focus-style</div>
+    </div>
+
+    <canvas id="viz" width="600" height="64" aria-hidden="true"></canvas>
+
+    <div class="status-bar">
+      <span class="status-pill" id="audioStatus">Audio stopped</span>
+      <button type="button" class="status-pill" id="wakeStatus" title="Tap to re-enable screen wake lock">Wake lock: off · tap to enable</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Presets</h2>
+    <select id="presetSelect" class="preset-select" aria-label="Presets">
+      <option value="custom">Custom</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn primary" id="saveBtn">Save</button>
+      <button class="btn danger" id="deletePresetBtn" disabled title="Delete selected saved preset">Delete</button>
+      <button class="btn" id="exportBtn">Export</button>
+      <button class="btn" id="importBtn">Import</button>
+    </div>
+    <div id="saveForm">
+      <input type="text" id="presetName" placeholder="Preset name" maxlength="40" autocomplete="off">
+      <div class="btn-row">
+        <button class="btn primary" id="confirmSave">Save</button>
+        <button class="btn" id="cancelSave">Cancel</button>
+      </div>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="card info">
+    <p><strong>About binaural beats &amp; the Monroe Institute</strong></p>
+    <p>When two pure tones of slightly different frequencies are played one to each ear, the brain perceives a third “beat” equal to their difference. This can encourage a frequency-following response and inter-hemispheric synchronization — the principle behind Robert Monroe’s Hemi-Sync® research and the Focus levels (Focus 10, 12, 15, 21…). This tool uses only pure sine waves via the Web Audio API.</p>
+    <details>
+      <summary>Disclaimer &amp; notes</summary>
+      <p>This is an educational experiment, not a medical device or treatment. Effects vary widely between individuals. Use at comfortable volume. The Screen Wake Lock API keeps the screen on while audio plays (supported on modern mobile browsers). All data stays in your browser (localStorage). No third-party libraries or tracking.</p>
+    </details>
+  </div>
+
+  <script>
+(function () {
+  'use strict';
+
+  // ---------- Built-in presets (public knowledge / common ranges) ----------
+  const BUILTIN = [
+    { name: 'Theta Meditation (classic 4 Hz)', left: 100, right: 104, volume: 0.25 },
+    { name: 'Deep Delta Sleep (~2 Hz)', left: 100, right: 102, volume: 0.2 },
+    { name: 'Alpha Relaxed Focus (10 Hz)', left: 200, right: 210, volume: 0.25 },
+    { name: 'Beta Concentration (16 Hz)', left: 200, right: 216, volume: 0.22 },
+    { name: 'Low Theta (~6 Hz)', left: 120, right: 126, volume: 0.25 },
+    { name: 'Focus 10-ish (body asleep / mind awake)', left: 100, right: 104.5, volume: 0.22 },
+    { name: 'Schumann-ish (7.83 Hz)', left: 150, right: 157.83, volume: 0.25 },
+    { name: 'Deep Theta (3.5 Hz)', left: 110, right: 113.5, volume: 0.22 }
+  ];
+
+  // ---------- DOM ----------
+  const playBtn = document.getElementById('playBtn');
+  const volumeEl = document.getElementById('volume');
+  const leftSlider = document.getElementById('leftSlider');
+  const rightSlider = document.getElementById('rightSlider');
+  const leftFreq = document.getElementById('leftFreq');
+  const rightFreq = document.getElementById('rightFreq');
+  const leftDisplay = document.getElementById('leftDisplay');
+  const rightDisplay = document.getElementById('rightDisplay');
+  const leftKnob = document.getElementById('leftKnob');
+  const rightKnob = document.getElementById('rightKnob');
+  const freqLinkBtn = document.getElementById('freqLinkBtn');
+  const freqLockBtn = document.getElementById('freqLockBtn');
+  const freqControls = document.getElementById('freqControls');
+  const beatDisplay = document.getElementById('beatDisplay');
+  const beatHint = document.getElementById('beatHint');
+  const presetSelect = document.getElementById('presetSelect');
+  const saveBtn = document.getElementById('saveBtn');
+  const deletePresetBtn = document.getElementById('deletePresetBtn');
+  const saveForm = document.getElementById('saveForm');
+  const presetName = document.getElementById('presetName');
+  const confirmSave = document.getElementById('confirmSave');
+  const cancelSave = document.getElementById('cancelSave');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  const audioStatus = document.getElementById('audioStatus');
+  const wakeStatus = document.getElementById('wakeStatus');
+  const canvas = document.getElementById('viz');
+  const ctx2d = canvas.getContext('2d');
+
+  // Safe frequency limits (Hz)
+  const FREQ_MIN = 20;
+  const FREQ_MAX = 1500;
+
+  let freqsLocked = true;
+  let freqsLinked = false;
+  // Last committed pair — used so linked edits keep a stable difference
+  let lastLeft = 100;
+  let lastRight = 104;
+
+  // ---------- Audio engine ----------
+  let audioCtx = null;
+  let leftOsc = null;
+  let rightOsc = null;
+  let leftGain = null;
+  let rightGain = null;
+  let masterGain = null;
+  let merger = null;
+  let isPlaying = false;
+  let wakeLock = null;
+  let animId = null;
+  let startTime = 0;
+
+  function ensureAudio() {
+    if (audioCtx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+
+    leftOsc = audioCtx.createOscillator();
+    rightOsc = audioCtx.createOscillator();
+    leftOsc.type = 'sine';
+    rightOsc.type = 'sine';
+
+    leftGain = audioCtx.createGain();
+    rightGain = audioCtx.createGain();
+    masterGain = audioCtx.createGain();
+    merger = audioCtx.createChannelMerger(2);
+
+    leftOsc.connect(leftGain);
+    rightOsc.connect(rightGain);
+    leftGain.connect(merger, 0, 0);
+    rightGain.connect(merger, 0, 1);
+    merger.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+
+    leftOsc.frequency.value = parseFloat(leftFreq.value);
+    rightOsc.frequency.value = parseFloat(rightFreq.value);
+    masterGain.gain.value = parseFloat(volumeEl.value);
+
+    leftOsc.start();
+    rightOsc.start();
+
+    // Start muted until play
+    leftGain.gain.value = 0;
+    rightGain.gain.value = 0;
+  }
+
+  function setFrequencies(l, r) {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    leftOsc.frequency.setTargetAtTime(l, now, 0.01);
+    rightOsc.frequency.setTargetAtTime(r, now, 0.01);
+  }
+
+  function setVolume(v) {
+    if (!masterGain) return;
+    masterGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.02);
+  }
+
+  function startAudio() {
+    ensureAudio();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const now = audioCtx.currentTime;
+    leftGain.gain.setTargetAtTime(1, now, 0.015);
+    rightGain.gain.setTargetAtTime(1, now, 0.015);
+    isPlaying = true;
+    playBtn.textContent = '⏸';
+    playBtn.classList.add('playing');
+    playBtn.setAttribute('aria-label', 'Pause');
+    audioStatus.textContent = 'Playing';
+    audioStatus.classList.add('on');
+    startTime = performance.now();
+    requestWakeLock();
+    startViz();
+  }
+
+  function stopAudio() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    leftGain.gain.setTargetAtTime(0, now, 0.02);
+    rightGain.gain.setTargetAtTime(0, now, 0.02);
+    isPlaying = false;
+    playBtn.textContent = '▶';
+    playBtn.classList.remove('playing');
+    playBtn.setAttribute('aria-label', 'Play');
+    audioStatus.textContent = 'Audio stopped';
+    audioStatus.classList.remove('on');
+    releaseWakeLock();
+    stopViz();
+  }
+
+  // ---------- Wake Lock ----------
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) {
+      wakeStatus.textContent = 'Wake lock: unsupported';
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeStatus.textContent = 'Wake lock: on';
+      wakeStatus.classList.add('on');
+      wakeLock.addEventListener('release', () => {
+        wakeStatus.textContent = 'Wake lock: off · tap to enable';
+        wakeStatus.classList.remove('on');
+        wakeLock = null;
+      });
+    } catch (err) {
+      wakeStatus.textContent = 'Wake lock: denied · tap to retry';
+      wakeStatus.classList.remove('on');
+      console.warn('Wake Lock error:', err);
+    }
+  }
+
+  async function releaseWakeLock() {
+    if (wakeLock) {
+      try { await wakeLock.release(); } catch (_) {}
+      wakeLock = null;
+    }
+    wakeStatus.textContent = 'Wake lock: off · tap to enable';
+    wakeStatus.classList.remove('on');
+  }
+
+  // Re-acquire on visibility change if still playing
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && isPlaying && !wakeLock) {
+      await requestWakeLock();
+    }
+  });
+
+  // ---------- UI sync ----------
+  function getFractional(v) {
+    // Keep a continuous 0–1 fractional part for the visual indicator
+    const f = v - Math.floor(v);
+    return Math.round(f * 10) / 10;
+  }
+
+  function ensureKnobIndicator(knob) {
+    let indicator = knob.querySelector('.knob-ind');
+    if (!indicator) {
+      indicator = document.createElement('div');
+      indicator.className = 'knob-ind';
+      // tip at top; origin at knob center (half of 48px = 24px from top of 14px bar → 24-7=17... use 50% 50% of knob via positioning)
+      indicator.style.cssText = [
+        'position:absolute',
+        'left:50%',
+        'top:50%',
+        'width:3px',
+        'height:16px',
+        'margin-left:-1.5px',
+        'margin-top:-22px', /* sticks upward from center */
+        'background:var(--accent)',
+        'border-radius:2px',
+        'transform-origin:50% 22px', /* bottom of bar = center of knob */
+        'pointer-events:none',
+        'will-change:transform'
+      ].join(';');
+      knob.appendChild(indicator);
+    }
+    return indicator;
+  }
+
+  // deg: CSS degrees, 0 = pointing up
+  function setKnobAngle(knob, deg) {
+    const indicator = ensureKnobIndicator(knob);
+    indicator.style.transform = 'rotate(' + deg + 'deg)';
+  }
+
+  function setKnobVisual(knob, value) {
+    // When idle: indicator shows fractional Hz (0.0 → 0°, full turn per 1 Hz)
+    const frac = value - Math.floor(value);
+    const deg = frac * 360;
+    knob.setAttribute('aria-valuenow', value.toFixed(2));
+    setKnobAngle(knob, deg);
+  }
+
+  // Given a new value for one ear, return {left, right} preserving binaural gap if linked.
+  function pairFromSide(side, value) {
+    const next = clamp(value, FREQ_MIN, FREQ_MAX);
+    const diff = lastRight - lastLeft;
+    let l = lastLeft;
+    let r = lastRight;
+    if (side === 'left') {
+      l = next;
+      if (freqsLinked) r = clamp(l + diff, FREQ_MIN, FREQ_MAX);
+    } else {
+      r = next;
+      if (freqsLinked) l = clamp(r - diff, FREQ_MIN, FREQ_MAX);
+    }
+    return { left: l, right: r };
+  }
+
+  // Lightweight update during fine-tune drag.
+  function applyFrequencyLive(side, value, fingerAngleRad) {
+    if (freqsLocked) return;
+    const pair = pairFromSide(side, value);
+
+    // Primary ear: optional finger-angle arrow
+    const primaryNext = side === 'left' ? pair.left : pair.right;
+    const primaryKnob = side === 'left' ? leftKnob : rightKnob;
+    const primaryInput = side === 'left' ? leftFreq : rightFreq;
+    const primaryDisplay = side === 'left' ? leftDisplay : rightDisplay;
+    const primarySlider = side === 'left' ? leftSlider : rightSlider;
+    primaryInput.value = primaryNext;
+    primaryDisplay.textContent = primaryNext.toFixed(2);
+    primarySlider.value = Math.min(600, Math.max(40, Math.round(primaryNext)));
+    primaryKnob.setAttribute('aria-valuenow', primaryNext.toFixed(2));
+    if (typeof fingerAngleRad === 'number') {
+      setKnobAngle(primaryKnob, fingerAngleRad * (180 / Math.PI) + 90);
+    } else {
+      setKnobAngle(primaryKnob, (primaryNext - Math.floor(primaryNext)) * 360);
+    }
+
+    if (freqsLinked) {
+      const otherSide = side === 'left' ? 'right' : 'left';
+      const otherNext = otherSide === 'left' ? pair.left : pair.right;
+      const otherKnob = otherSide === 'left' ? leftKnob : rightKnob;
+      const otherInput = otherSide === 'left' ? leftFreq : rightFreq;
+      const otherDisplay = otherSide === 'left' ? leftDisplay : rightDisplay;
+      const otherSlider = otherSide === 'left' ? leftSlider : rightSlider;
+      otherInput.value = otherNext;
+      otherDisplay.textContent = otherNext.toFixed(2);
+      otherSlider.value = Math.min(600, Math.max(40, Math.round(otherNext)));
+      otherKnob.setAttribute('aria-valuenow', otherNext.toFixed(2));
+      setKnobAngle(otherKnob, (otherNext - Math.floor(otherNext)) * 360);
+    }
+
+    lastLeft = pair.left;
+    lastRight = pair.right;
+    beatDisplay.textContent = Math.abs(pair.left - pair.right).toFixed(2) + ' Hz';
+
+    if (audioCtx && leftOsc && rightOsc) {
+      leftOsc.frequency.setTargetAtTime(pair.left, audioCtx.currentTime, 0.008);
+      rightOsc.frequency.setTargetAtTime(pair.right, audioCtx.currentTime, 0.008);
+    }
+    markCustomIfDirty();
+  }
+
+  function updateBeat() {
+    const l = parseFloat(leftFreq.value) || 0;
+    const r = parseFloat(rightFreq.value) || 0;
+    const beat = Math.abs(l - r);
+    beatDisplay.textContent = beat.toFixed(2) + ' Hz';
+
+    let range = '—';
+    if (beat < 0.5) range = 'Very low / borderline';
+    else if (beat < 4) range = 'Delta · deep sleep / healing';
+    else if (beat < 8) range = 'Theta · meditative / Focus-style';
+    else if (beat < 13) range = 'Alpha · relaxed awareness';
+    else if (beat < 30) range = 'Beta · alert / concentration';
+    else range = 'High beta / gamma territory';
+    beatHint.textContent = range;
+
+    leftDisplay.textContent = l.toFixed(2);
+    rightDisplay.textContent = r.toFixed(2);
+    setKnobVisual(leftKnob, l);
+    setKnobVisual(rightKnob, r);
+  }
+
+  function syncFromInputs() {
+    const l = clamp(parseFloat(leftFreq.value), FREQ_MIN, FREQ_MAX);
+    const r = clamp(parseFloat(rightFreq.value), FREQ_MIN, FREQ_MAX);
+    leftFreq.value = l;
+    rightFreq.value = r;
+    lastLeft = l;
+    lastRight = r;
+    // Coarse slider shows the integer part (rounded)
+    leftSlider.value = Math.min(600, Math.max(40, Math.round(l)));
+    rightSlider.value = Math.min(600, Math.max(40, Math.round(r)));
+    updateBeat();
+    if (audioCtx) setFrequencies(l, r);
+    markCustomIfDirty();
+  }
+
+  function clamp(v, min, max) {
+    if (typeof v !== 'number' || isNaN(v)) return min;
+    return Math.min(max, Math.max(min, v));
+  }
+
+  // Apply absolute frequency (snap to 0.01 Hz); respects link
+  function applyFrequency(side, value) {
+    if (freqsLocked) return;
+    const pair = pairFromSide(side, Math.round(clamp(value, FREQ_MIN, FREQ_MAX) * 100) / 100);
+    leftFreq.value = Math.round(pair.left * 100) / 100;
+    rightFreq.value = Math.round(pair.right * 100) / 100;
+    syncFromInputs();
+  }
+
+  function setFreqsLocked(locked) {
+    freqsLocked = locked;
+    const controls = [leftSlider, rightSlider, leftFreq, rightFreq];
+    controls.forEach(el => {
+      el.disabled = locked;
+    });
+    leftKnob.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    rightKnob.setAttribute('aria-disabled', locked ? 'true' : 'false');
+    freqControls.classList.toggle('locked', locked);
+    freqLockBtn.classList.toggle('unlocked', !locked);
+    freqLockBtn.classList.toggle('locked', locked);
+    freqLockBtn.setAttribute('aria-pressed', locked ? 'true' : 'false');
+    freqLockBtn.textContent = locked ? '🔒 Locked' : '🔓 Editing';
+    freqLockBtn.title = locked ? 'Unlock to edit frequencies' : 'Lock frequencies to prevent accidental changes';
+  }
+
+  // ---------- Visualizer (simple phase / beat pulse) ----------
+  function startViz() {
+    if (animId) return;
+    function draw() {
+      const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+      const h = canvas.height = 64 * (window.devicePixelRatio || 1);
+      ctx2d.clearRect(0, 0, w, h);
+
+      if (!isPlaying) {
+        animId = null;
+        return;
+      }
+
+      const t = (performance.now() - startTime) / 1000;
+      const l = parseFloat(leftFreq.value) || 100;
+      const r = parseFloat(rightFreq.value) || 104;
+      const beat = Math.abs(l - r);
+
+      ctx2d.lineWidth = 2 * (window.devicePixelRatio || 1);
+
+      // Left wave
+      ctx2d.beginPath();
+      ctx2d.strokeStyle = 'rgba(88, 166, 255, 0.7)';
+      for (let x = 0; x < w; x++) {
+        const phase = (x / w) * 8 * Math.PI + t * l * 0.15;
+        const y = h / 2 + Math.sin(phase) * (h * 0.28);
+        if (x === 0) ctx2d.moveTo(x, y);
+        else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      // Right wave
+      ctx2d.beginPath();
+      ctx2d.strokeStyle = 'rgba(63, 185, 80, 0.7)';
+      for (let x = 0; x < w; x++) {
+        const phase = (x / w) * 8 * Math.PI + t * r * 0.15;
+        const y = h / 2 + Math.sin(phase) * (h * 0.28);
+        if (x === 0) ctx2d.moveTo(x, y);
+        else ctx2d.lineTo(x, y);
+      }
+      ctx2d.stroke();
+
+      // Beat envelope indicator
+      if (beat > 0.1) {
+        const env = 0.5 + 0.5 * Math.sin(t * beat * Math.PI * 2);
+        ctx2d.fillStyle = `rgba(88, 166, 255, ${0.15 + env * 0.25})`;
+        ctx2d.fillRect(0, 0, w, h);
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+    animId = requestAnimationFrame(draw);
+  }
+
+  function stopViz() {
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+    const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+    const h = canvas.height = 64 * (window.devicePixelRatio || 1);
+    ctx2d.clearRect(0, 0, w, h);
+  }
+
+  // ---------- Presets ----------
+  const STORAGE_KEY = 'binaural-beats-lab-presets-v1';
+  const SESSION_KEY = 'binaural-beats-lab-session-v1';
+
+  // currentPresetKey: 'custom' | 'b0'.. | 'u0'..
+  let currentPresetKey = 'custom';
+  // Name of last non-custom selection (for save default / overwrite)
+  let lastPresetName = '';
+  // Suppress dirty checks while applying a preset programmatically
+  let applyingPreset = false;
+
+  function loadUserPresets() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveUserPresets(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+
+  function getPresetByKey(key) {
+    if (!key || key === 'custom') return null;
+    if (key.startsWith('b')) {
+      return BUILTIN[parseInt(key.slice(1), 10)] || null;
+    }
+    if (key.startsWith('u')) {
+      return loadUserPresets()[parseInt(key.slice(1), 10)] || null;
+    }
+    return null;
+  }
+
+  function matchesPreset(p) {
+    if (!p) return false;
+    const l = parseFloat(leftFreq.value) || 0;
+    const r = parseFloat(rightFreq.value) || 0;
+    const v = parseFloat(volumeEl.value) || 0;
+    const pv = p.volume != null ? p.volume : 0.25;
+    return Math.abs(p.left - l) < 0.005
+      && Math.abs(p.right - r) < 0.005
+      && Math.abs(pv - v) < 0.005;
+  }
+
+  function rebuildPresetSelect(selectKey) {
+    const userList = loadUserPresets();
+    const prev = selectKey != null ? selectKey : presetSelect.value;
+
+    presetSelect.innerHTML = '';
+
+    const customOpt = document.createElement('option');
+    customOpt.value = 'custom';
+    customOpt.textContent = 'Custom';
+    presetSelect.appendChild(customOpt);
+
+    const builtInGroup = document.createElement('optgroup');
+    builtInGroup.label = 'Built-in';
+    BUILTIN.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = 'b' + i;
+      opt.textContent = p.name;
+      builtInGroup.appendChild(opt);
+    });
+    presetSelect.appendChild(builtInGroup);
+
+    if (userList.length) {
+      const userGroup = document.createElement('optgroup');
+      userGroup.label = 'Saved';
+      userList.forEach((p, i) => {
+        const opt = document.createElement('option');
+        opt.value = 'u' + i;
+        opt.textContent = p.name;
+        userGroup.appendChild(opt);
+      });
+      presetSelect.appendChild(userGroup);
+    }
+
+    // Restore selection if still valid
+    const valid = Array.from(presetSelect.options).some(o => o.value === prev);
+    presetSelect.value = valid ? prev : 'custom';
+    currentPresetKey = presetSelect.value;
+    updateDeleteButton();
+  }
+
+  function updateDeleteButton() {
+    // Only user-saved presets can be deleted
+    const canDelete = currentPresetKey.startsWith('u');
+    deletePresetBtn.disabled = !canDelete;
+  }
+
+  function persistSession() {
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        key: currentPresetKey,
+        name: lastPresetName,
+        left: parseFloat(leftFreq.value),
+        right: parseFloat(rightFreq.value),
+        volume: parseFloat(volumeEl.value)
+      }));
+    } catch (_) {}
+  }
+
+  function applyPreset(p, key) {
+    applyingPreset = true;
+    leftFreq.value = p.left;
+    rightFreq.value = p.right;
+    volumeEl.value = p.volume != null ? p.volume : 0.25;
+    syncFromInputs();
+    setVolume(parseFloat(volumeEl.value));
+    currentPresetKey = key || 'custom';
+    if (p.name) lastPresetName = p.name;
+    presetSelect.value = currentPresetKey;
+    updateDeleteButton();
+    persistSession();
+    applyingPreset = false;
+    // Always lock after loading a preset to avoid accidental edits
+    setFreqsLocked(true);
+  }
+
+  // Call after any manual freq/volume change
+  function markCustomIfDirty() {
+    if (applyingPreset) return;
+    if (currentPresetKey === 'custom') {
+      persistSession();
+      return;
+    }
+    const p = getPresetByKey(currentPresetKey);
+    if (!p || !matchesPreset(p)) {
+      currentPresetKey = 'custom';
+      presetSelect.value = 'custom';
+      updateDeleteButton();
+    }
+    persistSession();
+  }
+
+  // ---------- Event listeners ----------
+  playBtn.addEventListener('click', () => {
+    if (isPlaying) stopAudio();
+    else startAudio();
+  });
+
+  volumeEl.addEventListener('input', () => {
+    setVolume(parseFloat(volumeEl.value));
+    markCustomIfDirty();
+  });
+
+  leftSlider.addEventListener('input', () => {
+    if (freqsLocked) return;
+    const frac = getFractional(parseFloat(leftFreq.value) || 0);
+    const next = clamp(parseFloat(leftSlider.value) + frac, FREQ_MIN, FREQ_MAX);
+    const pair = pairFromSide('left', next);
+    leftFreq.value = pair.left;
+    rightFreq.value = pair.right;
+    syncFromInputs();
+  });
+  rightSlider.addEventListener('input', () => {
+    if (freqsLocked) return;
+    const frac = getFractional(parseFloat(rightFreq.value) || 0);
+    const next = clamp(parseFloat(rightSlider.value) + frac, FREQ_MIN, FREQ_MAX);
+    const pair = pairFromSide('right', next);
+    leftFreq.value = pair.left;
+    rightFreq.value = pair.right;
+    syncFromInputs();
+  });
+
+  function enforceFreqInput(el) {
+    const raw = el.value;
+    if (raw === '' || raw === '-' || raw === '.') return; // allow temporary typing
+    let v = parseFloat(raw);
+    if (isNaN(v)) {
+      el.value = FREQ_MIN;
+      syncFromInputs();
+      return;
+    }
+    if (v < FREQ_MIN || v > FREQ_MAX) {
+      v = clamp(v, FREQ_MIN, FREQ_MAX);
+      el.value = v;
+    }
+    if (freqsLinked) {
+      const side = el === leftFreq ? 'left' : 'right';
+      const pair = pairFromSide(side, v);
+      leftFreq.value = pair.left;
+      rightFreq.value = pair.right;
+      v = side === 'left' ? pair.left : pair.right;
+    }
+    // Live preview while typing (still clamped)
+    if (el === leftFreq) leftDisplay.textContent = v.toFixed(2);
+    else rightDisplay.textContent = v.toFixed(2);
+    updateBeat();
+  }
+
+  leftFreq.addEventListener('input', () => enforceFreqInput(leftFreq));
+  rightFreq.addEventListener('input', () => enforceFreqInput(rightFreq));
+
+  leftFreq.addEventListener('change', () => {
+    leftFreq.value = clamp(parseFloat(leftFreq.value), FREQ_MIN, FREQ_MAX);
+    syncFromInputs();
+  });
+  rightFreq.addEventListener('change', () => {
+    rightFreq.value = clamp(parseFloat(rightFreq.value), FREQ_MIN, FREQ_MAX);
+    syncFromInputs();
+  });
+  leftFreq.addEventListener('blur', () => {
+    leftFreq.value = clamp(parseFloat(leftFreq.value), FREQ_MIN, FREQ_MAX);
+    syncFromInputs();
+  });
+  rightFreq.addEventListener('blur', () => {
+    rightFreq.value = clamp(parseFloat(rightFreq.value), FREQ_MIN, FREQ_MAX);
+    syncFromInputs();
+  });
+
+  // Lock / unlock frequency editing
+  function setFreqsLinked(linked) {
+    freqsLinked = linked;
+    freqLinkBtn.classList.toggle('linked', linked);
+    freqLinkBtn.setAttribute('aria-pressed', linked ? 'true' : 'false');
+    freqLinkBtn.textContent = linked ? '🔗 Linked' : '🔗 Unlinked';
+    freqLinkBtn.title = linked
+      ? 'Unlink ears: edit left and right independently'
+      : 'Link ears: keep the same binaural difference when changing either frequency';
+  }
+
+  freqLinkBtn.addEventListener('click', () => {
+    setFreqsLinked(!freqsLinked);
+  });
+
+  freqLockBtn.addEventListener('click', () => {
+    setFreqsLocked(!freqsLocked);
+  });
+
+  // ---------- Fine-tune knobs ----------
+  // Absolute angle sets the fraction: up=.0, right=.25, down=.5, left=.75
+  // Crossing the top changes the integer Hz. Release snaps to nearest 0.01.
+  function setupKnob(knob, side) {
+    let dragging = false;
+    let value = 0;
+    let didDrag = false;
+    let mode = null;
+    let centerX = 0;
+    let centerY = 0;
+    let baseInteger = 0;
+    let lastFrac = 0;
+
+    function cacheCenter() {
+      const r = knob.getBoundingClientRect();
+      centerX = r.left + r.width / 2;
+      centerY = r.top + r.height / 2;
+    }
+
+    function xy(e) {
+      if (e.touches && e.touches.length) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      if (e.changedTouches && e.changedTouches.length) {
+        return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function getAngle(e) {
+      const p = xy(e);
+      return Math.atan2(p.y - centerY, p.x - centerX);
+    }
+
+    // Finger direction → 0..1 (0 = up, 0.5 = down, clockwise)
+    function angleToFrac(a) {
+      let deg = a * (180 / Math.PI) + 90;
+      deg = ((deg % 360) + 360) % 360;
+      return deg / 360;
+    }
+
+    function applyFromFinger(e) {
+      const a = getAngle(e);
+      const frac = angleToFrac(a);
+
+      // Crossing the top (up): clockwise raises Hz, counter-clockwise lowers
+      if (lastFrac > 0.75 && frac < 0.25) {
+        baseInteger += 1;
+        didDrag = true;
+      } else if (lastFrac < 0.25 && frac > 0.75) {
+        baseInteger -= 1;
+        didDrag = true;
+      } else if (Math.abs(frac - lastFrac) > 0.015) {
+        didDrag = true;
+      }
+
+      lastFrac = frac;
+      value = baseInteger + frac;
+      applyFrequencyLive(side, value, a);
+    }
+
+    function finish() {
+      if (!dragging) return;
+      dragging = false;
+      mode = null;
+      knob.classList.remove('dragging');
+      applyFrequency(side, value);
+      document.removeEventListener('touchmove', onTouchMove, true);
+      document.removeEventListener('touchend', onTouchEnd, true);
+      document.removeEventListener('touchcancel', onTouchEnd, true);
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onMouseUp, true);
+    }
+
+    function onTouchMove(e) {
+      if (!dragging || mode !== 'touch') return;
+      e.preventDefault();
+      applyFromFinger(e);
+    }
+    function onTouchEnd() { finish(); }
+
+    function onTouchStart(e) {
+      if (freqsLocked || dragging) return;
+      e.preventDefault();
+      dragging = true;
+      mode = 'touch';
+      didDrag = false;
+      cacheCenter();
+      const current = parseFloat((side === 'left' ? leftFreq : rightFreq).value) || 0;
+      baseInteger = Math.floor(current);
+      const a = getAngle(e);
+      lastFrac = angleToFrac(a);
+      value = baseInteger + lastFrac;
+      knob.classList.add('dragging');
+      applyFrequencyLive(side, value, a);
+      document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+      document.addEventListener('touchend', onTouchEnd, { capture: true });
+      document.addEventListener('touchcancel', onTouchEnd, { capture: true });
+    }
+
+    function onMouseMove(e) {
+      if (!dragging || mode !== 'mouse') return;
+      e.preventDefault();
+      applyFromFinger(e);
+    }
+    function onMouseUp() { finish(); }
+
+    function onMouseDown(e) {
+      if (freqsLocked || dragging) return;
+      if (e.button !== 0) return;
+      e.preventDefault();
+      dragging = true;
+      mode = 'mouse';
+      didDrag = false;
+      cacheCenter();
+      const current = parseFloat((side === 'left' ? leftFreq : rightFreq).value) || 0;
+      baseInteger = Math.floor(current);
+      const a = getAngle(e);
+      lastFrac = angleToFrac(a);
+      value = baseInteger + lastFrac;
+      knob.classList.add('dragging');
+      applyFrequencyLive(side, value, a);
+      window.addEventListener('mousemove', onMouseMove, true);
+      window.addEventListener('mouseup', onMouseUp, true);
+    }
+
+    knob.addEventListener('touchstart', onTouchStart, { passive: false });
+    knob.addEventListener('mousedown', onMouseDown);
+
+    knob.addEventListener('click', () => {
+      if (freqsLocked || didDrag) return;
+      applyFrequency(side, (parseFloat((side === 'left' ? leftFreq : rightFreq).value) || 0) + 0.01);
+    });
+  }
+
+  setupKnob(leftKnob, 'left');
+  setupKnob(rightKnob, 'right');
+
+  // Wake lock pill acts as a re-enable button when it is off
+  wakeStatus.addEventListener('click', async () => {
+    if (wakeLock) return;
+    await requestWakeLock();
+  });
+
+  presetSelect.addEventListener('change', () => {
+    const v = presetSelect.value;
+    if (v === 'custom') {
+      currentPresetKey = 'custom';
+      updateDeleteButton();
+      persistSession();
+      return;
+    }
+    const p = getPresetByKey(v);
+    if (p) applyPreset(p, v);
+  });
+
+  saveBtn.addEventListener('click', () => {
+    saveForm.classList.add('visible');
+    // Default name = last selected preset (so Save overwrites unless renamed)
+    presetName.value = lastPresetName || '';
+    presetName.focus();
+    presetName.select();
+  });
+
+  cancelSave.addEventListener('click', () => {
+    saveForm.classList.remove('visible');
+  });
+
+  confirmSave.addEventListener('click', () => {
+    const name = (presetName.value.trim() || lastPresetName || 'My preset').slice(0, 40);
+    const entry = {
+      name,
+      left: parseFloat(leftFreq.value),
+      right: parseFloat(rightFreq.value),
+      volume: parseFloat(volumeEl.value)
+    };
+    const list = loadUserPresets();
+    const existingIdx = list.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    if (existingIdx >= 0) {
+      list[existingIdx] = entry;
+    } else {
+      list.push(entry);
+    }
+    saveUserPresets(list);
+    rebuildPresetSelect();
+    const idx = loadUserPresets().findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    const key = idx >= 0 ? 'u' + idx : 'custom';
+    lastPresetName = name;
+    applyPreset(entry, key);
+    saveForm.classList.remove('visible');
+  });
+
+  deletePresetBtn.addEventListener('click', () => {
+    if (!currentPresetKey.startsWith('u')) return;
+    const p = getPresetByKey(currentPresetKey);
+    const label = p ? p.name : 'this preset';
+    if (!confirm('Delete saved preset "' + label + '"? This cannot be undone.')) return;
+    const idx = parseInt(currentPresetKey.slice(1), 10);
+    const list = loadUserPresets();
+    if (idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+    saveUserPresets(list);
+    lastPresetName = '';
+    currentPresetKey = 'custom';
+    rebuildPresetSelect('custom');
+    persistSession();
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const list = loadUserPresets();
+    const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'binaural-presets.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', () => {
+    const file = importFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error('Invalid format');
+        const existing = loadUserPresets();
+        data
+          .filter(p => p && typeof p.left === 'number' && typeof p.right === 'number')
+          .forEach(p => {
+            const entry = {
+              name: String(p.name || 'Imported').slice(0, 40),
+              left: clamp(p.left, FREQ_MIN, FREQ_MAX),
+              right: clamp(p.right, FREQ_MIN, FREQ_MAX),
+              volume: typeof p.volume === 'number' ? clamp(p.volume, 0, 1) : 0.25
+            };
+            const i = existing.findIndex(e => e.name.toLowerCase() === entry.name.toLowerCase());
+            if (i >= 0) existing[i] = entry;
+            else existing.push(entry);
+          });
+        saveUserPresets(existing);
+        rebuildPresetSelect(currentPresetKey);
+      } catch (err) {
+        alert('Could not import presets: ' + err.message);
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // Initial: build list, restore last session
+  rebuildPresetSelect('custom');
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && typeof s.left === 'number' && typeof s.right === 'number') {
+        applyingPreset = true;
+        leftFreq.value = s.left;
+        rightFreq.value = s.right;
+        volumeEl.value = typeof s.volume === 'number' ? s.volume : 0.25;
+        syncFromInputs();
+        setVolume(parseFloat(volumeEl.value));
+        applyingPreset = false;
+        if (s.name) lastPresetName = s.name;
+        if (s.key && s.key !== 'custom' && getPresetByKey(s.key) && matchesPreset(getPresetByKey(s.key))) {
+          currentPresetKey = s.key;
+          presetSelect.value = s.key;
+        } else {
+          currentPresetKey = 'custom';
+          presetSelect.value = 'custom';
+        }
+        updateDeleteButton();
+      }
+    }
+  } catch (_) {}
+  updateBeat();
+  persistSession();
+
+  // Resize canvas on orientation change
+  window.addEventListener('resize', () => {
+    if (isPlaying) {
+      canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+    }
+  });
+})();
+  </script>
+</body>
+</html>
