@@ -469,13 +469,52 @@
     }
 
     /* Visualizer */
+    .viz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .viz-header .section-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+
+    #vizToggle {
+      min-height: 32px;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #vizToggle.on {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.1);
+    }
+
     #viz {
       width: 100%;
       height: 64px;
       background: var(--bg);
       border-radius: 8px;
       display: block;
-      margin-top: 0.5rem;
+    }
+
+    #viz[hidden] {
+      display: none;
     }
 
     /* Presets */
@@ -784,6 +823,10 @@
       <div class="hint" id="beatHint">Theta range · meditative / Focus-style</div>
     </div>
 
+    <div class="viz-header">
+      <span class="section-label">Oscilloscope</span>
+      <button type="button" id="vizToggle" class="on" aria-pressed="true" title="Show or hide the oscilloscope">On</button>
+    </div>
     <canvas id="viz" width="600" height="64" aria-hidden="true"></canvas>
 
     <div class="am-section">
@@ -913,6 +956,8 @@
   const wakeStatus = document.getElementById('wakeStatus');
   const canvas = document.getElementById('viz');
   const ctx2d = canvas.getContext('2d');
+  const vizToggle = document.getElementById('vizToggle');
+  let vizEnabled = true;
 
   // Safe frequency limits (Hz)
   const FREQ_MIN = 20;
@@ -1431,9 +1476,24 @@
   }
 
   // ---------- Visualizer (simple phase / beat pulse) ----------
+  function setVizEnabled(on) {
+    vizEnabled = on;
+    vizToggle.classList.toggle('on', on);
+    vizToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+    vizToggle.textContent = on ? 'On' : 'Off';
+    canvas.hidden = !on;
+    if (!on) stopViz();
+    else if (isPlaying) startViz();
+    if (typeof persistSession === 'function') persistSession();
+  }
+
   function startViz() {
-    if (animId) return;
+    if (!vizEnabled || animId) return;
     function draw() {
+      if (!vizEnabled) {
+        animId = null;
+        return;
+      }
       const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
       const h = canvas.height = 64 * (window.devicePixelRatio || 1);
       ctx2d.clearRect(0, 0, w, h);
@@ -1489,10 +1549,17 @@
       cancelAnimationFrame(animId);
       animId = null;
     }
-    const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
-    const h = canvas.height = 64 * (window.devicePixelRatio || 1);
-    ctx2d.clearRect(0, 0, w, h);
+    if (!vizEnabled || !canvas.clientWidth) return;
+    try {
+      const w = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+      const h = canvas.height = 64 * (window.devicePixelRatio || 1);
+      ctx2d.clearRect(0, 0, w, h);
+    } catch (_) {}
   }
+
+  vizToggle.addEventListener('click', () => {
+    setVizEnabled(!vizEnabled);
+  });
 
   // ---------- Presets ----------
   const STORAGE_KEY = 'binaural-beats-lab-presets-v1';
@@ -1644,7 +1711,8 @@
         name: lastPresetName,
         left: parseFloat(leftFreq.value),
         right: parseFloat(rightFreq.value),
-        volume: parseFloat(volumeEl.value)
+        volume: parseFloat(volumeEl.value),
+        vizEnabled: !!vizEnabled
       }, snapshotExtraAudio())));
     } catch (_) {}
   }
@@ -2365,6 +2433,7 @@
           presetSelect.value = 'custom';
         }
         updateDeleteButton();
+        if (typeof s.vizEnabled === 'boolean') setVizEnabled(s.vizEnabled);
       }
     }
   } catch (_) {}
