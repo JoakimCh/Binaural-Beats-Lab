@@ -517,6 +517,67 @@
       display: none;
     }
 
+    #strobeBtn {
+      width: 100%;
+      margin-top: 0.75rem;
+    }
+
+    .strobe-warn {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+      line-height: 1.35;
+    }
+
+    #strobeOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      display: none;
+      flex-direction: column;
+      justify-content: flex-end;
+      touch-action: none;
+    }
+
+    #strobeOverlay.on {
+      display: flex;
+    }
+
+    #strobeFlash {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @keyframes strobeHard {
+      0%, 49.9% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .strobe-exit {
+      position: relative;
+      z-index: 1;
+      margin: 0 1rem 2rem;
+      padding: 0.85rem 1rem 1.1rem;
+      background: rgba(0,0,0,0.55);
+      border-radius: 14px;
+    }
+
+    .strobe-exit label {
+      display: block;
+      color: #ddd;
+      font-size: 0.8rem;
+      margin-bottom: 0.45rem;
+      text-align: center;
+    }
+
+    .strobe-exit input[type="range"] {
+      width: 100%;
+    }
+
     /* Presets */
     .preset-select {
       width: 100%;
@@ -865,6 +926,9 @@
       <span class="status-pill" id="audioStatus">Audio stopped</span>
       <button type="button" class="status-pill" id="wakeStatus" title="Tap to re-enable screen wake lock">Wake lock: off · tap to enable</button>
     </div>
+
+    <button type="button" class="btn" id="strobeBtn">Activate strober</button>
+    <p class="strobe-warn">Fullscreen black/white flash at the current binaural beat rate. Do not use if you have photosensitive epilepsy or migraine. Slide to exit — not a tap.</p>
   </div>
 
   <div class="card">
@@ -895,6 +959,14 @@
       <summary>Disclaimer &amp; notes</summary>
       <p>This is an educational experiment, not a medical device or treatment. Effects vary widely between individuals. Use at comfortable volume. The Screen Wake Lock API keeps the screen on while audio plays (supported on modern mobile browsers). All data stays in your browser (localStorage). No third-party libraries or tracking.</p>
     </details>
+  </div>
+
+  <div id="strobeOverlay" aria-hidden="true">
+    <div id="strobeFlash"></div>
+    <div class="strobe-exit">
+      <label for="strobeExit">Slide to exit strober</label>
+      <input type="range" id="strobeExit" min="0" max="100" value="0" step="1">
+    </div>
   </div>
 
   <script>
@@ -965,6 +1037,10 @@
 
   let freqsLocked = true;
   let amLocked = true;
+  let currentBeatHz = 4;
+  let strobeOn = false;
+  let strobeAnim = null;
+  let lastStrobeModeHz = 0;
   let freqsLinked = false;
   // Last committed pair — used so linked edits keep a stable difference
   let lastLeft = 100;
@@ -982,6 +1058,7 @@
   let wakeLock = null;
   let animId = null;
   let startTime = 0;
+  let oscStartTime = 0;
 
   let noiseSource = null;
   let noiseGain = null;
@@ -1034,6 +1111,7 @@
 
     leftOsc.start();
     rightOsc.start();
+    oscStartTime = audioCtx.currentTime;
 
     // Start muted until play
     leftGain.gain.value = 0;
@@ -1423,6 +1501,11 @@
     else if (beat < 30) range = 'Beta · alert / concentration';
     else range = 'High beta / gamma territory';
     beatHint.textContent = range;
+    currentBeatHz = beat;
+    if (strobeOn && beat >= STROBE_SMOOTH_BELOW && Math.abs(beat - lastStrobeModeHz) > 0.05) {
+      lastStrobeModeHz = beat;
+      applyHardStrobeCss(Math.max(0.25, Math.min(40, beat)));
+    }
 
     leftDisplay.textContent = l.toFixed(2);
     rightDisplay.textContent = r.toFixed(2);
@@ -1753,6 +1836,102 @@
   }
 
   // ---------- Event listeners ----------
+  const strobeBtn = document.getElementById('strobeBtn');
+  const strobeOverlay = document.getElementById('strobeOverlay');
+  const strobeFlash = document.getElementById('strobeFlash');
+  const strobeExit = document.getElementById('strobeExit');
+
+  const STROBE_SMOOTH_BELOW = 8; // Hz — sine fade below this, hard CSS flash above
+
+  function strobeHz() {
+    return Math.max(0.25, Math.min(40, currentBeatHz || 4));
+  }
+
+  function strobeTime() {
+    if (audioCtx) return audioCtx.currentTime - oscStartTime;
+    return performance.now() / 1000;
+  }
+
+  function applyHardStrobeCss(hz) {
+    strobeFlash.style.animation = 'none';
+    // Restart so duration changes take effect
+    void strobeFlash.offsetWidth;
+    strobeFlash.style.animation = 'strobeHard ' + (1 / hz) + 's linear infinite';
+  }
+
+  function stopHardStrobeCss() {
+    strobeFlash.style.animation = 'none';
+    strobeFlash.style.opacity = '0';
+  }
+
+  function strobeLoop() {
+    if (!strobeOn) return;
+    const hz = strobeHz();
+    if (hz >= STROBE_SMOOTH_BELOW) {
+      // High rate: CSS clock is more stable than rAF-sampled square (avoids 20 Hz wobble)
+      strobeAnim = null;
+      lastStrobeModeHz = hz;
+      applyHardStrobeCss(hz);
+      return;
+    }
+    stopHardStrobeCss();
+    const env = Math.abs(Math.cos(Math.PI * hz * strobeTime()));
+    strobeFlash.style.opacity = String(env);
+    strobeAnim = requestAnimationFrame(strobeLoop);
+  }
+
+  async function startStrobe() {
+    strobeOn = true;
+    strobeExit.value = 0;
+    strobeOverlay.classList.add('on');
+    strobeOverlay.setAttribute('aria-hidden', 'false');
+    requestWakeLock();
+    try {
+      if (strobeOverlay.requestFullscreen) await strobeOverlay.requestFullscreen();
+      else if (strobeOverlay.webkitRequestFullscreen) strobeOverlay.webkitRequestFullscreen();
+    } catch (_) {}
+    strobeLoop();
+  }
+
+  async function stopStrobe() {
+    strobeOn = false;
+    if (strobeAnim) {
+      cancelAnimationFrame(strobeAnim);
+      strobeAnim = null;
+    }
+    stopHardStrobeCss();
+    lastStrobeModeHz = 0;
+    strobeOverlay.classList.remove('on');
+    strobeOverlay.setAttribute('aria-hidden', 'true');
+    strobeExit.value = 0;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+    } catch (_) {}
+    if (!isPlaying) releaseWakeLock();
+  }
+
+  strobeBtn.addEventListener('click', () => {
+    if (strobeOn) return;
+    startStrobe();
+  });
+
+  strobeExit.addEventListener('input', () => {
+    if (parseFloat(strobeExit.value) >= 98) stopStrobe();
+  });
+  strobeExit.addEventListener('change', () => {
+    if (parseFloat(strobeExit.value) < 98) strobeExit.value = 0;
+  });
+  strobeExit.addEventListener('pointerup', () => {
+    if (parseFloat(strobeExit.value) < 98) strobeExit.value = 0;
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if (strobeOn && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      // Keep overlay even if fullscreen is denied/exited by the OS
+    }
+  });
+
   playBtn.addEventListener('click', () => {
     if (isPlaying) stopAudio();
     else startAudio();
